@@ -33,6 +33,15 @@ export function moonIllumination(phase: number): number {
   return Math.round((1 - Math.cos(2 * Math.PI * phase)) * 50);
 }
 
+export function moonEmoji(phase: number): string {
+  // 8 phases mapped from 0..1
+  // 0/1 new, 0.125 waxing crescent, 0.25 first qtr, 0.375 waxing gibbous,
+  // 0.5 full, 0.625 waning gibbous, 0.75 last qtr, 0.875 waning crescent
+  const emojis = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
+  const i = Math.round(phase * 8) % 8;
+  return emojis[i];
+}
+
 export function partOfDayRange(hour: number): "morning" | "afternoon" | "evening" | null {
   if (hour >= 6 && hour < 12) return "morning";
   if (hour >= 12 && hour < 18) return "afternoon";

@@ -21,6 +21,8 @@ export interface OwmHourly {
   feels_like: number;
   pop: number;
   wind_speed: number;
+  rain?: { "1h"?: number };
+  snow?: { "1h"?: number };
   weather: { id: number; main: string; description: string; icon: string }[];
 }
 
@@ -33,6 +35,8 @@ export interface OwmDaily {
   feels_like: { morn: number; day: number; eve: number; night: number };
   pop: number;
   wind_speed: number;
+  rain?: number;
+  snow?: number;
   weather: { id: number; main: string; description: string; icon: string }[];
 }
 
