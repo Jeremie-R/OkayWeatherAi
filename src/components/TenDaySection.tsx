@@ -12,7 +12,7 @@ export function TenDaySection({
 }) {
   const days = data.daily
     .map((d, i) => ({ d, i }))
-    .filter(({ i }) => i !== 1); // show today, skip tomorrow (has its own section)
+    .filter(({ i }) => i >= 2); // skip today & tomorrow (already shown in dedicated sections)
   const allDays = data.daily;
   const periodMin = Math.min(...allDays.map((d) => d.temp.min));
   const periodMax = Math.max(...allDays.map((d) => d.temp.max));
