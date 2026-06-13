@@ -14,7 +14,7 @@ import type { OneCallResponse } from "@/lib/owm";
 import { buildCtx, pickQuote } from "@/lib/quotes";
 import { localHour, msToKmh } from "@/lib/weather";
 
-export function TodaySection({ data, locName }: { data: OneCallResponse; locName: string }) {
+export function TodaySection({ data, locName, onOpenDay }: { data: OneCallResponse; locName: string; onOpenDay?: () => void }) {
   const { current, hourly, timezone_offset } = data;
   const windKmh = msToKmh(current.wind_speed);
   const ctx = buildCtx({

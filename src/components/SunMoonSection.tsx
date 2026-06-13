@@ -2,7 +2,7 @@ import { Sunrise, Sunset } from "lucide-react";
 import type { OneCallResponse } from "@/lib/owm";
 import { moonPhaseName, moonIllumination, daysToFull, formatTime, moonEmoji } from "@/lib/weather";
 
-export function SunMoonSection({ data }: { data: OneCallResponse }) {
+export function SunMoonSection({ data, onOpenDay }: { data: OneCallResponse; onOpenDay?: () => void }) {
   const { current, daily, timezone_offset } = data;
   const sunrise = current.sunrise;
   const sunset = current.sunset;
