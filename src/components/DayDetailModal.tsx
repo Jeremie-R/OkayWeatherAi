@@ -13,10 +13,10 @@ import {
   Cell,
 } from "recharts";
 import { WeatherIcon } from "./WeatherIcon";
-import type { OneCallResponse, OwmHourly } from "@/lib/owm";
+import type { OneCallResponse } from "@/lib/owm";
+import type { OmHourly } from "@/lib/openmeteo";
 import {
   localDayLabel,
-  localHour,
   msToKmh,
   moonEmoji,
   moonPhaseName,
@@ -24,45 +24,46 @@ import {
 } from "@/lib/weather";
 import { buildCtx, pickQuote } from "@/lib/quotes";
 
-function modeIcon(hours: OwmHourly[]): string {
+function modeIcon(hours: OmHourly[]): string {
   const counts = new Map<string, number>();
   for (const h of hours) {
-    const c = h.weather[0].icon;
+    const c = h.icon;
     counts.set(c, (counts.get(c) ?? 0) + 1);
   }
-  let best = hours[0]?.weather[0].icon ?? "01d";
+  let best = hours[0]?.icon ?? "01d";
   let bestN = 0;
   for (const [k, v] of counts) if (v > bestN) { best = k; bestN = v; }
   return best;
 }
 
-function bucketHours(hours: OwmHourly[], tz: number) {
+function bucketHours(hours: OmHourly[]) {
   // 12 two-hour buckets keyed by start hour 0..22
-  const buckets: { start: number; hours: OwmHourly[] }[] = [];
+  const buckets: { start: number; hours: OmHourly[] }[] = [];
   for (let s = 0; s < 24; s += 2) buckets.push({ start: s, hours: [] });
   for (const h of hours) {
-    const hr = localHour(h.dt, tz);
-    const idx = Math.floor(hr / 2);
+    const idx = Math.floor(h.hour / 2);
     if (buckets[idx]) buckets[idx].hours.push(h);
   }
   return buckets;
 }
 
-function partRep(hours: OwmHourly[]) {
+function partRep(hours: OmHourly[]) {
   if (!hours.length) return null;
-  const rep = hours.reduce((a, b) => (b.temp > a.temp ? b : a));
-  const feels = Math.round(hours.reduce((s, h) => s + h.feels_like, 0) / hours.length);
-  const pop = Math.round((hours.reduce((s, h) => s + h.pop, 0) / hours.length) * 100);
-  const wind = msToKmh(hours.reduce((s, h) => s + h.wind_speed, 0) / hours.length);
-  return { icon: rep.weather[0].icon, temp: Math.round(rep.temp), feels, pop, wind };
+  const rep = hours.reduce((a, b) => (b.tempC > a.tempC ? b : a));
+  const feels = Math.round(hours.reduce((s, h) => s + h.feelsLikeC, 0) / hours.length);
+  const pop = Math.round(hours.reduce((s, h) => s + h.popPct, 0) / hours.length);
+  const wind = hours.reduce((s, h) => s + h.windKmh, 0) / hours.length;
+  return { icon: rep.icon, temp: Math.round(rep.tempC), feels, pop, wind };
 }
 
 export function DayDetailModal({
   data,
+  omHourly,
   dayIndex,
   onClose,
 }: {
   data: OneCallResponse | null;
+  omHourly: OmHourly[] | null;
   dayIndex: number | null;
   onClose: () => void;
 }) {
@@ -84,9 +85,7 @@ export function DayDetailModal({
   const day = data!.daily[dayIndex!];
   const tz = data!.timezone_offset;
   const targetDate = new Date((day.dt + tz) * 1000).toISOString().slice(0, 10);
-  const hours = data!.hourly.filter(
-    (h) => new Date((h.dt + tz) * 1000).toISOString().slice(0, 10) === targetDate,
-  );
+  const hours: OmHourly[] = (omHourly ?? []).filter((h) => h.date === targetDate);
   const label = localDayLabel(day.dt, tz, dayIndex!);
 
   const windKmh = msToKmh(day.wind_speed);
@@ -100,17 +99,11 @@ export function DayDetailModal({
   });
   const quote = pickQuote(ctx, `${targetDate}-${day.weather[0].id}`);
 
-  const morning = partRep(hours.filter((h) => {
-    const hr = localHour(h.dt, tz); return hr >= 6 && hr < 12;
-  }));
-  const afternoon = partRep(hours.filter((h) => {
-    const hr = localHour(h.dt, tz); return hr >= 12 && hr < 18;
-  }));
-  const evening = partRep(hours.filter((h) => {
-    const hr = localHour(h.dt, tz); return hr >= 18;
-  }));
+  const morning = partRep(hours.filter((h) => h.hour >= 6 && h.hour < 12));
+  const afternoon = partRep(hours.filter((h) => h.hour >= 12 && h.hour < 18));
+  const evening = partRep(hours.filter((h) => h.hour >= 18));
 
-  const buckets = bucketHours(hours, tz);
+  const buckets = bucketHours(hours);
   const haveHourly = hours.length > 0;
   const chartData = buckets.map((b) => {
     const hrs = b.hours;
@@ -120,10 +113,10 @@ export function DayDetailModal({
     }
     return {
       hour: lab,
-      temp: Math.round(hrs.reduce((s, h) => s + h.temp, 0) / hrs.length),
-      rain: +(hrs.reduce((s, h) => s + (h.rain?.["1h"] ?? 0), 0)).toFixed(2),
-      pop: Math.round((hrs.reduce((s, h) => s + h.pop, 0) / hrs.length) * 100),
-      wind: Math.round(msToKmh(hrs.reduce((s, h) => s + h.wind_speed, 0) / hrs.length)),
+      temp: Math.round(hrs.reduce((s, h) => s + h.tempC, 0) / hrs.length),
+      rain: +(hrs.reduce((s, h) => s + h.precipMm, 0)).toFixed(2),
+      pop: Math.round(hrs.reduce((s, h) => s + h.popPct, 0) / hrs.length),
+      wind: Math.round(hrs.reduce((s, h) => s + h.windKmh, 0) / hrs.length),
       icon: modeIcon(hrs),
     };
   });

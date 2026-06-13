@@ -1,83 +1,44 @@
-## OkayWeather — build plan
+# Extend day-detail hourly data to all 10 days via Open-Meteo
 
-A mobile-first, light/white, rounded one-pager that leans on your hand-made weather icons for personality. Built in Lovable on TanStack Start; connect to GitHub afterwards from the + menu.
+## Goal
+Day-detail pages currently only have real hourly data for today and tomorrow (OWM One Call gives 48h). For days 3–10 the charts silently break. Fix by sourcing hourly data from **Open-Meteo** (free, no key, no signup, 16-day hourly) and keeping the existing 12 × 2-hour column layout on every day page.
 
-### Data & APIs
-- **OpenWeatherMap One Call 3.0** for current, hourly (8h), daily (10d), sunrise/sunset, moon phase, feels_like, wind, pop (rain probability).
-- **OpenWeatherMap Geocoding API** (`/geo/1.0/direct`) for city search — returns name + country + lat/lon, free.
-- API key shipped in client (per your call). I'll keep it in a single `src/lib/owm.ts` constant so it's easy to rotate later.
-- Units: metric (°C, km/h). Easy to toggle later if you want.
+## Approach
 
-### Icons
-Unzip your `WeatherIcon/` set into `src/assets/weather-icons/` and map by OWM code (`01d`…`50n`). One helper `<WeatherIcon code="10d" size={...} />`. Moon phases get their own small SVG set (computed from One Call's `moon_phase` 0–1 → new/waxing crescent/first quarter/…/waning crescent).
+OWM stays the primary source for everything else (today card, tomorrow card, sun/moon, 10-day summary list, current conditions). Open-Meteo is added as a second source used **only** to power the hourly charts inside the day-detail overlay.
 
-### Funny quotes engine
-File: `src/lib/quotes.ts`.
-- Each quote: `{ text, rule: (ctx) => boolean, weight }`.
-- `ctx` = `{ tempC, feelsLikeC, deltaFeel, condition, isRain, isSnow, isClear, isCloudy, windKmh, hour }`.
-- Rule buckets seeded with ~8–12 lines each:
-  - **Hot** (>28), **Cold** (<5), **Big feels-like gap** (|delta|≥4),
-  - **Rain**, **Snow**, **Thunder**, **Fog/Mist**,
-  - **Windy** (>30), **Perfect day** (clear, 18–24, low wind) — slightly complaining,
-  - **Default fallback**.
-- Selector: filter matching rules → pick weighted-random with a daily seed so the line is stable across reloads on the same day/location/condition (no AI calls).
+Single fetch per app load: when we load OWM, we also load a full 10-day hourly Open-Meteo response for the same coordinates and cache it. Opening any day page then just slices the cached array by date — no extra request per day.
 
-### Sections (single scrolling page)
+For consistency, today and tomorrow also switch to Open-Meteo for the day-detail charts (so all 10 day pages render from the same data shape and look identical). The main "Today" section on the home page keeps using OWM — no change there.
 
-1. **Header / location**
-   - Default: geolocation → reverse geocode for label. Fallback: last-used city from `localStorage`.
-   - Tap location → opens a sheet with: search input + list of recent searches (stored in `localStorage`, max 8). Typing hits Geocoding API (debounced 250 ms), results show "City, Region, Country".
+## Changes
 
-2. **Today**
-   - Big temp + "feels like X°", weather icon, condition word, one funny quote underneath.
-   - Wind row (low emphasis): small fan icon + "Calm / Breezy / Windy / Storm" + km/h subtle.
-   - **Next-8h chart**: combined bars (rain probability %) + line (temp °) over 8 hourly points. Uses Recharts ComposedChart.
+### Data layer
+- `src/lib/openmeteo.ts` (new): typed fetcher for Open-Meteo's `/v1/forecast` endpoint. Request hourly fields: `temperature_2m`, `apparent_temperature`, `precipitation`, `precipitation_probability`, `weathercode`, `wind_speed_10m`, `wind_gusts_10m`, `wind_direction_10m`, `is_day`. Params: `forecast_days=10`, `timezone=auto`, `wind_speed_unit=ms`. Returns a flat array of hourly points with a JS `Date`.
+- `src/lib/weather.ts`: extend the shared `WeatherData` type with an `openMeteoHourly` field (array of hourly points). Add a helper `getHoursForDay(hourly, dayIndex, tzOffsetSec)` that returns the 24 hours belonging to a given local day.
+- Weather code mapping helper: small function mapping Open-Meteo WMO codes → existing OWM icon codes (e.g. `01d`, `10n`, `13d`) so `WeatherIcon` keeps working unchanged. Day/night decided from `is_day`.
 
-3. **Sun & Moon**
-   - Horizontal 24h track with night-blue background. A lighter "day" bar spans sunrise→sunset. A pulsing dot marks "now". Labels: sunrise time / sunset time at the bar edges.
-   - Below: moon icon + phase name + "% illuminated · X days to full".
+### Fetch wiring
+- Wherever OWM One Call is fetched today (root loader / query), fire Open-Meteo in parallel with `Promise.all`. Attach result to the same query data object. If Open-Meteo fails, day pages 3–10 degrade gracefully (charts show "Hourly forecast unavailable" placeholder); OWM-driven UI is unaffected.
 
-4. **Tomorrow**
-   - Three rounded cards: Morning (6–12), Afternoon (12–18), Evening (18–24). Aggregated from tomorrow's hourly slice.
-   - Each: icon + temp (large), then small row: feels-like, rain %, wind chip (Calm / Windy / Storm).
+### Day detail overlay
+- `src/components/DayDetailModal.tsx`: replace the current OWM-hourly source with `openMeteoHourly` for **all** day indices (0–9). Keep the existing `bucketHours` logic that averages into 12 × 2h columns — it already works on any 24-point hourly array. Inputs change:
+  - temperature/feels-like → from `temperature_2m` / `apparent_temperature`
+  - rain chart → from `precipitation` (mm) + `precipitation_probability`
+  - wind chart → from `wind_speed_10m` + `wind_gusts_10m` + `wind_direction_10m`
+  - per-column weather icon → from mapped `weathercode` + `is_day`
+- Remove the now-unused OWM hourly slicing path inside the modal.
 
-5. **Next 10 days**
-   - One row per day: short day name + date · icon · low–high temp · optional rain-% chip if pop ≥ 10%.
-   - Tap a row (or any Tomorrow card) → **Day detail modal** with hour-by-hour list (icon, time, temp, feels, rain %, wind).
+### Cleanup
+- Keep `owm.ts` hourly types intact (still used by the home `TodaySection` chart). No changes to TodaySection, TomorrowSection, SunMoonSection, TenDaySection, Header, LocationSheet.
 
-### Routing & structure
-Single route `/` (TanStack Start). Modal handled via shadcn `Dialog`. Location sheet via shadcn `Sheet`.
+## Technical notes
+- Open-Meteo endpoint: `https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weathercode,wind_speed_10m,wind_gusts_10m,wind_direction_10m,is_day&forecast_days=10&timezone=auto&wind_speed_unit=ms`
+- No API key, no auth header, generous free limits — safe to call from the browser.
+- Day grouping uses the `timezone=auto` offset returned by Open-Meteo (`utc_offset_seconds`) so local-midnight boundaries match what the user sees, regardless of their device timezone.
+- 12 × 2h buckets: pair hours `[0,1]`, `[2,3]`, … `[22,23]`. Temperature/feels-like = mean; rain mm = sum; rain probability = max; wind speed/gusts = mean; wind dir = vector-averaged; icon = mode of mapped codes.
 
-```text
-src/
-  routes/index.tsx
-  components/
-    Header.tsx, LocationSheet.tsx
-    TodaySection.tsx, HourlyChart.tsx
-    SunMoonSection.tsx, SunTrack.tsx, MoonBadge.tsx
-    TomorrowSection.tsx, PartOfDayCard.tsx
-    TenDaySection.tsx, DayRow.tsx
-    DayDetailModal.tsx
-    WeatherIcon.tsx, WindChip.tsx
-  lib/
-    owm.ts        // fetchers + types
-    quotes.ts     // rules + selector
-    weather.ts    // helpers (windLabel, moonPhaseName, daysToFull, partsOfDay)
-    geo.ts        // geocoding + recent-searches localStorage
-  assets/weather-icons/*.svg
-```
-
-Data fetching via TanStack Query (`useQuery` keyed on lat/lon). Loading → skeletons; error → friendly retry card.
-
-### Design
-- Tailwind v4 tokens in `src/styles.css`: white background, soft `--muted` cards (`oklch(0.985 0.005 250)`), 1rem radius (rounded-2xl), subtle border. Typography: a clean modern sans (e.g. Manrope display + Inter body) loaded via `<link>` in `__root.tsx`.
-- Mobile-first: max-width ~ 480 px column, generous padding, large numbers for temperatures.
-- Motion: subtle fade-up on section mount via `motion/react` — nothing flashy.
-
-### Known caveats I'll flag in code
-- OWM key is public in the bundle (your choice). Add a code comment + README note to rotate it if quota gets hit.
-- One Call 3.0 daily forecast goes 8 days by default; for "10 days" I'll request the max it returns and render whatever comes back (typically 8). I'll label the section "Next days" so it stays accurate.
-- Moon "days to full" computed from current `moon_phase` value (29.53-day cycle).
-
-### After you approve
-I'll build everything end-to-end in one pass, then you can connect GitHub from the + menu to push to your `OkayWeatherAi` repo.
+## Out of scope
+- No changes to OWM key handling, no new secrets.
+- No UI/layout changes to existing cards or the modal shell — only the data feeding the 3 charts changes.
+- No caching layer beyond the existing query — one Open-Meteo call per location load.
