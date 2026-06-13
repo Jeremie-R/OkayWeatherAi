@@ -11,6 +11,10 @@ export function TenDaySection({
   onOpenDay: (dayIndex: number) => void;
 }) {
   const days = data.daily.slice(1); // skip today
+  const allDays = data.daily;
+  const periodMin = Math.min(...allDays.map((d) => d.temp.min));
+  const periodMax = Math.max(...allDays.map((d) => d.temp.max));
+  const range = Math.max(1, periodMax - periodMin);
   return (
     <section className="px-5 pb-12">
       <h2 className="mb-3 flex items-center gap-2 text-base font-semibold tracking-tight">
@@ -22,29 +26,40 @@ export function TenDaySection({
           const idx = i + 1;
           const { short, date } = localDayLabel(d.dt, data.timezone_offset, idx);
           const pop = Math.round(d.pop * 100);
+          const rainMm = d.rain ?? 0;
+          const leftPct = ((d.temp.min - periodMin) / range) * 100;
+          const widthPct = Math.max(6, ((d.temp.max - d.temp.min) / range) * 100);
           return (
             <button
               key={d.dt}
               onClick={() => onOpenDay(idx)}
               className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-muted/40"
             >
-              <div className="w-20">
+              <div className="w-16 shrink-0">
                 <p className="text-sm font-medium">{short}</p>
                 <p className="text-[11px] text-muted-foreground">{date}</p>
               </div>
-              <WeatherIcon code={d.weather[0].icon} size={36} />
-              <div className="flex-1" />
-              {pop >= 10 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--chart-rain)]/15 px-2 py-0.5 text-xs font-medium text-[var(--chart-rain)]">
-                  <Droplets className="h-3 w-3" />
-                  {pop}%
-                </span>
-              )}
-              <div className="w-20 text-right tabular-nums">
-                <span className="text-muted-foreground">{Math.round(d.temp.min)}°</span>
-                <span className="mx-1.5 text-muted-foreground/40">/</span>
-                <span className="font-semibold">{Math.round(d.temp.max)}°</span>
+              <div className="w-10 shrink-0 flex flex-col items-center">
+                <WeatherIcon code={d.weather[0].icon} size={32} />
+                {pop >= 25 && rainMm > 0 && (
+                  <span className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-medium text-[var(--chart-rain)]">
+                    <Droplets className="h-2.5 w-2.5" />
+                    {rainMm.toFixed(1)}
+                  </span>
+                )}
               </div>
+              <span className="w-8 text-right text-sm tabular-nums text-muted-foreground">
+                {Math.round(d.temp.min)}°
+              </span>
+              <div className="relative h-1.5 flex-1 rounded-full bg-muted">
+                <div
+                  className="absolute inset-y-0 rounded-full bg-gradient-to-r from-sky-400 via-amber-300 to-orange-400"
+                  style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                />
+              </div>
+              <span className="w-8 text-right text-sm font-semibold tabular-nums">
+                {Math.round(d.temp.max)}°
+              </span>
             </button>
           );
         })}
