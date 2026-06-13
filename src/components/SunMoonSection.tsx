@@ -20,7 +20,10 @@ export function SunMoonSection({ data, onOpenDay }: { data: OneCallResponse; onO
 
   return (
     <section className="px-5">
-      <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm space-y-5">
+      <button
+        onClick={onOpenDay}
+        className="w-full rounded-3xl bg-card border border-border/60 p-6 shadow-sm space-y-5 text-left transition hover:bg-muted/40"
+      >
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Sun
