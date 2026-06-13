@@ -14,7 +14,7 @@ import type { OneCallResponse } from "@/lib/owm";
 import { buildCtx, pickQuote } from "@/lib/quotes";
 import { localHour, msToKmh } from "@/lib/weather";
 
-export function TodaySection({ data, locName }: { data: OneCallResponse; locName: string }) {
+export function TodaySection({ data, locName, onOpenDay }: { data: OneCallResponse; locName: string; onOpenDay?: () => void }) {
   const { current, hourly, timezone_offset } = data;
   const windKmh = msToKmh(current.wind_speed);
   const ctx = buildCtx({
@@ -44,7 +44,10 @@ export function TodaySection({ data, locName }: { data: OneCallResponse; locName
 
   return (
     <section className="px-5">
-      <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
+      <button
+        onClick={onOpenDay}
+        className="w-full rounded-3xl bg-card border border-border/60 p-6 shadow-sm text-left transition hover:bg-muted/40"
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -121,7 +124,7 @@ export function TodaySection({ data, locName }: { data: OneCallResponse; locName
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </button>
     </section>
   );
 }

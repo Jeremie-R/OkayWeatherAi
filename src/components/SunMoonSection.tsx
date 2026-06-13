@@ -2,7 +2,7 @@ import { Sunrise, Sunset } from "lucide-react";
 import type { OneCallResponse } from "@/lib/owm";
 import { moonPhaseName, moonIllumination, daysToFull, formatTime, moonEmoji } from "@/lib/weather";
 
-export function SunMoonSection({ data }: { data: OneCallResponse }) {
+export function SunMoonSection({ data, onOpenDay }: { data: OneCallResponse; onOpenDay?: () => void }) {
   const { current, daily, timezone_offset } = data;
   const sunrise = current.sunrise;
   const sunset = current.sunset;
@@ -20,7 +20,10 @@ export function SunMoonSection({ data }: { data: OneCallResponse }) {
 
   return (
     <section className="px-5">
-      <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm space-y-5">
+      <button
+        onClick={onOpenDay}
+        className="w-full rounded-3xl bg-card border border-border/60 p-6 shadow-sm space-y-5 text-left transition hover:bg-muted/40"
+      >
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Sun
@@ -59,7 +62,7 @@ export function SunMoonSection({ data }: { data: OneCallResponse }) {
             </p>
           </div>
         </div>
-      </div>
+      </button>
     </section>
   );
 }
