@@ -10,7 +10,9 @@ export function TenDaySection({
   data: OneCallResponse;
   onOpenDay: (dayIndex: number) => void;
 }) {
-  const days = data.daily.slice(1); // skip today
+  const days = data.daily
+    .map((d, i) => ({ d, i }))
+    .filter(({ i }) => i !== 1); // show today, skip tomorrow (has its own section)
   const allDays = data.daily;
   const periodMin = Math.min(...allDays.map((d) => d.temp.min));
   const periodMax = Math.max(...allDays.map((d) => d.temp.max));
@@ -22,8 +24,7 @@ export function TenDaySection({
         Next days
       </h2>
       <div className="rounded-3xl bg-card border border-border/60 divide-y divide-border/60 overflow-hidden">
-        {days.map((d, i) => {
-          const idx = i + 1;
+        {days.map(({ d, i: idx }) => {
           const { short, date } = localDayLabel(d.dt, data.timezone_offset, idx);
           const pop = Math.round(d.pop * 100);
           const rainMm = d.rain ?? 0;
