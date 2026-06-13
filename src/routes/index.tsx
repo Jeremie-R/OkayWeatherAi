@@ -85,8 +85,8 @@ function Index() {
         )}
         {query.data && (
           <div className="space-y-5 pb-10">
-            <TodaySection data={query.data} locName={location.name} />
-            <SunMoonSection data={query.data} />
+            <TodaySection data={query.data} locName={location.name} onOpenDay={() => setOpenDay(0)} />
+            <SunMoonSection data={query.data} onOpenDay={() => setOpenDay(0)} />
             <TomorrowSection data={query.data} onOpenDetails={(i) => setOpenDay(i)} />
             <TenDaySection data={query.data} onOpenDay={(i) => setOpenDay(i)} />
           </div>
