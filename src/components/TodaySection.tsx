@@ -44,7 +44,10 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
 
   return (
     <section className="px-5">
-      <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
+      <button
+        onClick={onOpenDay}
+        className="w-full rounded-3xl bg-card border border-border/60 p-6 shadow-sm text-left transition hover:bg-muted/40"
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -121,7 +124,7 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </button>
     </section>
   );
 }
