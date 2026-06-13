@@ -62,7 +62,7 @@ export function SunMoonSection({ data, onOpenDay }: { data: OneCallResponse; onO
             </p>
           </div>
         </div>
-      </div>
+      </button>
     </section>
   );
 }
