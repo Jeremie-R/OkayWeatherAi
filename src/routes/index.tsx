@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchOneCall, reverseGeocode } from "@/lib/owm";
+import { fetchOpenMeteoHourly } from "@/lib/openmeteo";
 import { getLast, setLast, saveRecent, type SavedLocation } from "@/lib/geo";
 import { Header } from "@/components/Header";
 import { LocationSheet } from "@/components/LocationSheet";
@@ -61,7 +62,16 @@ function Index() {
 
   const query = useQuery({
     queryKey: ["weather", location.lat, location.lon],
-    queryFn: () => fetchOneCall(location.lat, location.lon),
+    queryFn: async () => {
+      const [owm, om] = await Promise.all([
+        fetchOneCall(location.lat, location.lon),
+        fetchOpenMeteoHourly(location.lat, location.lon).catch((e) => {
+          console.warn("Open-Meteo fetch failed", e);
+          return null;
+        }),
+      ]);
+      return { owm, om };
+    },
     staleTime: 10 * 60 * 1000,
   });
 
@@ -85,15 +95,20 @@ function Index() {
         )}
         {query.data && (
           <div className="space-y-5 pb-10">
-            <TodaySection data={query.data} locName={location.name} onOpenDay={() => setOpenDay(0)} />
-            <SunMoonSection data={query.data} onOpenDay={() => setOpenDay(0)} />
-            <TomorrowSection data={query.data} onOpenDetails={(i) => setOpenDay(i)} />
-            <TenDaySection data={query.data} onOpenDay={(i) => setOpenDay(i)} />
+            <TodaySection data={query.data.owm} locName={location.name} onOpenDay={() => setOpenDay(0)} />
+            <SunMoonSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />
+            <TomorrowSection data={query.data.owm} onOpenDetails={(i) => setOpenDay(i)} />
+            <TenDaySection data={query.data.owm} onOpenDay={(i) => setOpenDay(i)} />
           </div>
         )}
 
         <LocationSheet open={sheetOpen} onOpenChange={setSheetOpen} onSelect={handleSelect} />
-        <DayDetailModal data={query.data ?? null} dayIndex={openDay} onClose={() => setOpenDay(null)} />
+        <DayDetailModal
+          data={query.data?.owm ?? null}
+          omHourly={query.data?.om?.hourly ?? null}
+          dayIndex={openDay}
+          onClose={() => setOpenDay(null)}
+        />
       </div>
     </div>
   );
