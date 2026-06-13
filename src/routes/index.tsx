@@ -1,29 +1,129 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchOneCall, reverseGeocode } from "@/lib/owm";
+import { getLast, setLast, saveRecent, type SavedLocation } from "@/lib/geo";
+import { Header } from "@/components/Header";
+import { LocationSheet } from "@/components/LocationSheet";
+import { TodaySection } from "@/components/TodaySection";
+import { SunMoonSection } from "@/components/SunMoonSection";
+import { TomorrowSection } from "@/components/TomorrowSection";
+import { TenDaySection } from "@/components/TenDaySection";
+import { DayDetailModal } from "@/components/DayDetailModal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "OkayWeather — Honest forecasts" },
+      { name: "description", content: "A simple, modern weather app with a sense of humor." },
+      { property: "og:title", content: "OkayWeather" },
+      { property: "og:description", content: "A simple, modern weather app with a sense of humor." },
     ],
   }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+const DEFAULT_LOCATION: SavedLocation = {
+  name: "Amsterdam",
+  country: "NL",
+  lat: 52.3676,
+  lon: 4.9041,
+};
+
 function Index() {
+  const [location, setLocation] = useState<SavedLocation>(() => getLast() ?? DEFAULT_LOCATION);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [openDay, setOpenDay] = useState<number | null>(null);
+
+  // Try geolocation on first load only if user hasn't picked one before
+  useEffect(() => {
+    if (getLast()) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const r = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+        if (r) {
+          const loc: SavedLocation = {
+            name: r.name,
+            country: r.country,
+            state: r.state,
+            lat: r.lat,
+            lon: r.lon,
+          };
+          setLocation(loc);
+          setLast(loc);
+        }
+      },
+      () => {},
+      { timeout: 5000 },
+    );
+  }, []);
+
+  const query = useQuery({
+    queryKey: ["weather", location.lat, location.lon],
+    queryFn: () => fetchOneCall(location.lat, location.lon),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  function handleSelect(loc: SavedLocation) {
+    setLocation(loc);
+    setLast(loc);
+    saveRecent(loc);
+  }
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-[480px]">
+        <Header
+          name={`${location.name}, Today`}
+          onClick={() => setSheetOpen(true)}
+        />
+
+        {query.isLoading && <LoadingState />}
+        {query.isError && (
+          <ErrorState onRetry={() => query.refetch()} message={(query.error as Error).message} />
+        )}
+        {query.data && (
+          <div className="space-y-5 pb-10">
+            <TodaySection data={query.data} locName={location.name} />
+            <SunMoonSection data={query.data} />
+            <TomorrowSection data={query.data} onOpenDetails={(i) => setOpenDay(i)} />
+            <TenDaySection data={query.data} onOpenDay={(i) => setOpenDay(i)} />
+          </div>
+        )}
+
+        <LocationSheet open={sheetOpen} onOpenChange={setSheetOpen} onSelect={handleSelect} />
+        <DayDetailModal data={query.data ?? null} dayIndex={openDay} onClose={() => setOpenDay(null)} />
+      </div>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-3 px-5">
+      {[180, 120, 100, 240].map((h, i) => (
+        <div
+          key={i}
+          className="rounded-3xl border border-border/60 bg-card"
+          style={{ height: h }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ErrorState({ onRetry, message }: { onRetry: () => void; message: string }) {
+  return (
+    <div className="mx-5 rounded-3xl border border-border/60 bg-card p-6 text-center">
+      <p className="text-sm font-medium">Couldn't load the forecast</p>
+      <p className="mt-1 text-xs text-muted-foreground">{message}</p>
+      <button
+        onClick={onRetry}
+        className="mt-4 inline-flex items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+      >
+        Try again
+      </button>
     </div>
   );
 }
