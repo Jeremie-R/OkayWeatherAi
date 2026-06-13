@@ -1,6 +1,6 @@
 import { Sunrise, Sunset } from "lucide-react";
 import type { OneCallResponse } from "@/lib/owm";
-import { moonPhaseName, moonIllumination, daysToFull, formatTime } from "@/lib/weather";
+import { moonPhaseName, moonIllumination, daysToFull, formatTime, moonEmoji } from "@/lib/weather";
 
 export function SunMoonSection({ data }: { data: OneCallResponse }) {
   const { current, daily, timezone_offset } = data;
@@ -25,13 +25,13 @@ export function SunMoonSection({ data }: { data: OneCallResponse }) {
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Sun
           </p>
-          <div className="relative mt-4 h-10 rounded-full bg-[oklch(0.22_0.05_265)] overflow-hidden">
+          <div className="relative mt-4 h-3 rounded-full bg-[var(--track-dusk)] overflow-visible">
             <div
-              className="absolute top-0 bottom-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300"
+              className="absolute inset-y-0 rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300"
               style={{ left: `${sunrisePct}%`, width: `${sunsetPct - sunrisePct}%` }}
             />
             <div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-4 w-4 rounded-full bg-white border-2 border-foreground shadow"
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-white border border-foreground/30 shadow-sm"
               style={{ left: `${nowPct}%` }}
               aria-label="now"
             />
@@ -49,7 +49,9 @@ export function SunMoonSection({ data }: { data: OneCallResponse }) {
         </div>
 
         <div className="flex items-center gap-4 pt-2 border-t border-border/60">
-          <MoonIcon phase={phase} />
+          <span className="text-4xl leading-none" aria-label={phaseName}>
+            {moonEmoji(phase)}
+          </span>
           <div>
             <p className="text-sm font-medium">{phaseName}</p>
             <p className="text-xs text-muted-foreground">
@@ -59,37 +61,5 @@ export function SunMoonSection({ data }: { data: OneCallResponse }) {
         </div>
       </div>
     </section>
-  );
-}
-
-function MoonIcon({ phase }: { phase: number }) {
-  // SVG with masked illumination
-  const r = 18;
-  // Compute terminator: x-offset of the inner circle
-  const k = Math.cos(phase * 2 * Math.PI);
-  const offset = k * r;
-  const waxing = phase < 0.5;
-  return (
-    <svg width="44" height="44" viewBox="-22 -22 44 44" aria-hidden>
-      <circle r={r} fill="oklch(0.22 0.05 265)" />
-      {/* lit area: intersection of full disc and big offset disc */}
-      <defs>
-        <clipPath id="moon-disc">
-          <circle r={r} />
-        </clipPath>
-      </defs>
-      <g clipPath="url(#moon-disc)">
-        <circle
-          cx={waxing ? -offset : offset}
-          r={r}
-          fill="oklch(0.95 0.02 90)"
-        />
-        <circle
-          cx={waxing ? offset : -offset}
-          r={r}
-          fill="oklch(0.22 0.05 265)"
-        />
-      </g>
-    </svg>
   );
 }
