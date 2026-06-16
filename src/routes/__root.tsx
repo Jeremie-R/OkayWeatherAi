@@ -87,8 +87,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "okay weather ai" },
       { name: "twitter:description", content: "Simple weather app" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e717fda0-5b38-4528-b5c0-40de8be96346/id-preview-f8d00a40--1d15c2ee-2a05-4cbd-a29c-da801f8d6938.lovable.app-1781356088031.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e717fda0-5b38-4528-b5c0-40de8be96346/id-preview-f8d00a40--1d15c2ee-2a05-4cbd-a29c-da801f8d6938.lovable.app-1781356088031.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1781617651175-iconweather.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1781617651175-iconweather.webp" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
