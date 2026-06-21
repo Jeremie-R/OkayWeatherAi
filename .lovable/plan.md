@@ -1,51 +1,77 @@
-## Add weather alert rail
 
-OpenWeather's One Call 3.0 already returns an `alerts` array on the same response we fetch — we just need to stop excluding it and surface it in the UI.
+## Feasibility
 
-### Data
+Feasible with free APIs, no key required.
 
-`src/lib/owm.ts`
-- Add `OwmAlert` interface: `sender_name: string; event: string; start: number; end: number; description: string; tags: string[]`.
-- Add `alerts?: OwmAlert[]` to `OneCallResponse`.
-- Change fetch URL `exclude=alerts` → `exclude=` (we already kept minutely; now keep alerts too).
+- **RainViewer public API** (`api.rainviewer.com/public/weather-maps.json`) returns a list of radar tile timestamps: ~**past 2 hours** + a **nowcast of ~30 minutes ahead**.
+- We render the radar as a tile overlay on top of a minimal base map. Radar tiles encode precipitation as colored pixels; at city zoom they read as the soft blue blobs you described.
+- Slider range follows the API: roughly **−120 min … now … +30 min**. Exact endpoints depend on what RainViewer returns at any given moment — we'll always show the full window the API provides.
 
-### Alert rail (home)
+## Two tabs
 
-New `src/components/AlertRail.tsx`
-- Props: `alerts?: OwmAlert[]`, `onOpen: (index: number) => void`.
-- Returns `null` if no alerts.
-- Renders a short, single-line pill above the Now card:
-  - Subtle light surface in line with our cards: `rounded-2xl border border-border/60 bg-muted/40` (no heavy color), small triangle alert icon (`lucide-react` `AlertTriangle`) in `text-foreground/70`.
-  - Text: the alert `event` (e.g. "Yellow wind warning"), truncated with `truncate`, plus a tiny `chevron-right`.
-  - Sender shown as a faint suffix only if room (`text-muted-foreground`).
-  - Full-width button, `h-11`, horizontal padding to match other sections (`mx-5`).
-- If multiple alerts: render one pill per alert, stacked with `space-y-2` (keeps it subtle, no carousel).
+A sticky bottom tab bar with two tabs:
 
-Insert in `src/routes/index.tsx` directly above `<TodaySection>`:
-```
-<AlertRail alerts={query.data.owm.alerts} onOpen={(i) => setOpenAlert(i)} />
+```text
+┌─────────────────────────────┐
+│ (active screen)             │
+│                             │
+├─────────────────────────────┤
+│   ☀ Weather    🗺 Map       │
+└─────────────────────────────┘
 ```
 
-### Alert detail "page"
+- **Weather** — current screen, unchanged.
+- **Map** — new screen described below.
 
-The app is a single route with overlay modals (see `DayDetailModal`). Match that pattern so back/exit behavior is consistent.
+Routing: a pathless layout route `src/routes/_tabs.tsx` renders the tab bar + `<Outlet />`. Existing `index.tsx` moves to `_tabs.index.tsx` (URL stays `/`). New `_tabs.map.tsx` is `/map`. Tabs use `<Link>` with `activeProps` for the active state.
 
-New `src/components/AlertDetailModal.tsx`
-- Props: `alerts: OwmAlert[] | null; index: number | null; onClose: () => void`.
-- Full-screen sheet identical in framing to `DayDetailModal`: same header with a back chevron (`onClose`) and title = alert `event`, content scrolls.
-- Body:
-  - Sender (`sender_name`), small muted.
-  - Effective window: formatted `start` – `end` in the location's local time (reuse helpers in `weather.ts` if available, otherwise inline `Intl.DateTimeFormat`).
-  - Tags as small pill chips (if any).
-  - Full `description` rendered as `whitespace-pre-wrap` paragraph (OWM descriptions contain newlines and are plain text).
-- Esc / back chevron / backdrop click all call `onClose`, mirroring `DayDetailModal`.
+## Map screen
 
-Wire in `src/routes/index.tsx`:
-- `const [openAlert, setOpenAlert] = useState<number | null>(null);`
-- Render `<AlertDetailModal alerts={query.data?.owm.alerts ?? null} index={openAlert} onClose={() => setOpenAlert(null)} />` next to `DayDetailModal`.
+```text
+┌─────────────────────────────┐
+│ Header: "Amsterdam · Map"   │
+├─────────────────────────────┤
+│                             │
+│    minimal bicolor map      │
+│    with blue precip blobs   │
+│    pin marks current loc    │
+│                             │
+├─────────────────────────────┤
+│ -120m ────────●──────── +30m│
+│         12:34 (now)         │
+│      ▶ play / pause         │
+└─────────────────────────────┘
+```
 
-### Out of scope
-- No new providers, no notifications, no severity color coding beyond a single subtle icon, no changes to other sections.
+- **Base map**: Leaflet + CARTO Positron tiles (free, attribution required, soft gray-on-white — matches our minimal aesthetic). Centered on active location, zoom locked to a city-scale range (z=6–10).
+- **Radar overlay**: a single Leaflet `TileLayer` whose URL swaps as the slider moves. RainViewer pattern: `{host}/v2/radar/{path}/256/{z}/{x}/{y}/{color}/{options}.png`. Color scheme `2` (universal blue), smooth on, snow on — so it reads as soft blue blobs on the light map.
+- **Slider**: ticks are the RainViewer frame timestamps. Drag = scrub time. Endpoints are the actual min/max timestamps the API returns (typically −120 / +30 min around now). A "now" marker sits at the boundary between past and nowcast frames; the label shows the current frame's time in the location's timezone.
+- **Play button**: advances one frame every ~500 ms and loops. Drag interrupts it.
+- **Pin**: small dot at current location as a spatial anchor.
 
-### Notes
-- "Page" is implemented as a full-screen overlay to match the existing `DayDetailModal` pattern (this app has a single route). If you'd rather have a real `/alerts/$index` route, say so and I'll switch the plan.
+## Data flow
+
+- New `src/lib/rainviewer.ts`: `fetchRainViewerFrames()` returns `{ host, frames: { time: number; path: string; kind: "past" | "nowcast" }[], nowIndex: number }`. Cached 5 min via React Query.
+- Map screen reads location from the same `getLast()` source the weather screen uses — tabs stay in sync without any global state.
+- All radar data from RainViewer; OpenWeatherMap key stays untouched.
+
+## Dependencies
+
+- `leaflet`, `react-leaflet`, `@types/leaflet`. Leaflet CSS loaded via a `<link>` tag in `src/routes/__root.tsx` (per Tailwind v4 rule on remote stylesheets).
+
+## Files
+
+- `src/lib/rainviewer.ts` (new) — fetch + types + frame window.
+- `src/components/MapPrecipitation.tsx` (new) — Leaflet map + radar tile layer + pin. Client-only (lazy import).
+- `src/components/TimeSlider.tsx` (new) — slider, play/pause, time label, now marker.
+- `src/components/TabBar.tsx` (new) — sticky bottom bar with the two `<Link>`s.
+- `src/routes/_tabs.tsx` (new) — layout route: `<Outlet />` + `<TabBar />`.
+- `src/routes/_tabs.index.tsx` (new) — current home content, moved from `index.tsx`.
+- `src/routes/_tabs.map.tsx` (new) — Header + MapPrecipitation + TimeSlider.
+- `src/routes/index.tsx` — deleted (replaced by `_tabs.index.tsx`).
+
+## Out of scope
+
+- No SSR for the map (Leaflet is client-only; lazy-loaded).
+- No wind/temperature overlays, no layer toggle — precipitation only.
+- No swipe gestures between tabs; tap-only.
