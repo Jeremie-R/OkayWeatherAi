@@ -26,6 +26,9 @@ const QUOTES: QuoteRule[] = [
       "Says {temp}° but your skin filed a complaint at {feels}°.",
       "On paper: {temp}°. In real life: {feels}°. Trust the body.",
       "Thermometer is lying. It actually feels like {feels}°.",
+      "The app claims {temp}°, reality insists on {feels}°. Trust the friction.",
+      "Math says {temp}°, nerve endings say {feels}°. The gap is pure malice.",
+      "A textbook case of meteorological gaslighting. It feels like {feels}°.",
     ],
     rule: (c) => Math.abs(c.deltaFeel) >= 4,
     weight: 3,
@@ -37,12 +40,20 @@ const QUOTES: QuoteRule[] = [
       "It's {temp}°. Even the pigeons are taking shade.",
       "Officially {temp}°. Unofficially: soup.",
       "Hot enough to fry an egg on your phone case.",
+      "Sweating while completely stationary. Seamless design.",
+      "{temp}°: The atmosphere has texture, and it is aggressive.",
+      "Your structural integrity is melting at {temp}°.",
     ],
     rule: (c) => c.tempC >= 30,
     weight: 3,
   },
   {
-    texts: ["Sunscreen called. It wants reinforcements."],
+    texts: [
+      "Sunscreen called. It wants reinforcements.",
+      "The sky is a giant laser and you are an ant. Wear a hat.",
+      "{temp}° and unshaded. Main character energy with a tragic ending.",
+      "UV index is currently an active threat.",
+    ],
     rule: (c) => c.tempC >= 28 && c.isClear,
     weight: 2,
   },
@@ -53,22 +64,33 @@ const QUOTES: QuoteRule[] = [
       "{temp}°. Your nose is officially a popsicle.",
       "It's {temp}°. Layer like an onion, complain like a Parisian.",
       "Cold enough to make your coffee feel personal.",
+      "An absolute lack of thermal hospitality outside.",
+      "{temp}°. Time to look at real estate options near the equator.",
+      "Thermal underwear isn't a choice anymore; it's a structural requirement.",
     ],
     rule: (c) => c.tempC < 5,
     weight: 3,
   },
   {
-    texts: ["{feels}°? That's not weather, that's a personal attack."],
+    texts: [
+      "{feels}°? That's not weather, that's a personal attack.",
+      "{feels}°: Your face is now entirely ornamental.",
+      "The air feels like sharp metal. Enjoy your brief walk.",
+      "At {feels}°, inhalation is an active negotiation.",
+    ],
     rule: (c) => c.feelsLikeC <= -5,
     weight: 3,
   },
 
-  // Chilly + windy (new bucket)
+  // Chilly + windy
   {
     texts: [
       "{temp}° with {wind} km/h of wind. That's the cold doing cardio.",
       "Wind chill says hi. {feels}° and rude about it.",
       "Bundle up — the wind is editorializing.",
+      "{temp}° with a side of aerodynamic disrespect.",
+      "Horizontal freezing. The worst kind of alignment.",
+      "The wind is actively seeking out the single unzipped centimeter of your jacket.",
     ],
     rule: (c) => c.tempC <= 8 && c.windKmh >= 25,
     weight: 3,
@@ -81,6 +103,9 @@ const QUOTES: QuoteRule[] = [
       "It's raining. Hair plans cancelled.",
       "Bring an umbrella. Lose an umbrella. Tradition.",
       "Liquid sunshine, if you're an optimist.",
+      "Gravity is delivering gray water directly to your face.",
+      "Suboptimal humidity levels. High probability of wet socks.",
+      "Grey skies, damp denim, minor existential dread.",
     ],
     rule: (c) => c.isRain,
     weight: 2,
@@ -91,6 +116,9 @@ const QUOTES: QuoteRule[] = [
     texts: [
       "Snow! It's pretty for the first 12 minutes.",
       "Snow day. Drive like everyone forgot how cars work.",
+      "Aesthetically pleasing, logistically disastrous.",
+      "Slush in production. Prepare your footwear.",
+      "Charming on Instagram, highly abrasive on the sidewalk.",
     ],
     rule: (c) => c.isSnow,
     weight: 3,
@@ -101,6 +129,9 @@ const QUOTES: QuoteRule[] = [
     texts: [
       "Thunder. The sky is in a mood.",
       "Storm incoming. Unplug something dramatic.",
+      "Atmospheric drama. Nature is typing in all caps.",
+      "Sound effects provided by the upper atmosphere.",
+      "A free light show with immediate sonic consequences.",
     ],
     rule: (c) => c.isThunder,
     weight: 3,
@@ -108,19 +139,34 @@ const QUOTES: QuoteRule[] = [
 
   // Fog
   {
-    texts: ["Fog. Visibility: vibes only."],
+    texts: [
+      "Fog. Visibility: vibes only.",
+      "The world hasn't rendered properly yet. Please wait.",
+      "Silent Hill mode activated. Watch your step.",
+      "Like walking through a poorly conceptualized cloud.",
+    ],
     rule: (c) => c.isFog,
     weight: 3,
   },
 
   // Windy
   {
-    texts: ["Wind at {wind} km/h. Hold onto your hat. And your dog."],
+    texts: [
+      "Wind at {wind} km/h. Hold onto your hat. And your dog.",
+      "Nature's leaf blower is set to maximum.",
+      "{wind} km/h. Fighting the air just to move forward.",
+      "The atmosphere is moving faster than your career path.",
+    ],
     rule: (c) => c.windKmh >= 40,
     weight: 3,
   },
   {
-    texts: ["Windy. Hair will not survive this commute."],
+    texts: [
+      "Windy. Hair will not survive this commute.",
+      "Slightly too aggressive air. Unsolicited resistance.",
+      "{wind} km/h: Solid day for wind turbines, terrible for human dignity.",
+      "The wind is trying to make a point. Loudly.",
+    ],
     rule: (c) => c.windKmh >= 30 && c.windKmh < 50,
     weight: 2,
   },
@@ -131,6 +177,9 @@ const QUOTES: QuoteRule[] = [
       "Annoyingly perfect. {temp}° and not a cloud to blame.",
       "Suspiciously nice out. What does it want?",
       "{temp}° and sunny. Show-off weather.",
+      "{temp}° and clear. Now you have no excuse to be miserable indoors.",
+      "Uncomfortably optimal. Expect a catch later in the week.",
+      "Excellent conditions for feeling guilty about sitting at a desk.",
     ],
     rule: (c) => c.isClear && c.tempC >= 18 && c.tempC <= 26,
     weight: 3,
@@ -141,6 +190,9 @@ const QUOTES: QuoteRule[] = [
     texts: [
       "Grey, mild, forgettable. The default.",
       "Sky says 'maybe'. So do you.",
+      "An uninspired canvas. Total design apathy from the sky.",
+      "Neither warm nor cold. The lukewarm tap water of weather.",
+      "Visual white noise. Move along.",
     ],
     rule: (c) => c.isCloudy,
     weight: 1,
@@ -151,6 +203,9 @@ const QUOTES: QuoteRule[] = [
     texts: [
       "It's weather. It's happening.",
       "Look outside. That's the forecast.",
+      "Standard operational parameters. Nothing to report.",
+      "The background simulation continues.",
+      "Status: Weather exists.",
     ],
     rule: () => true,
     weight: 1,
