@@ -153,3 +153,10 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* Keep Leaflet panes/controls below modal overlays (Radix Sheet/Dialog at z-50). */
+.map-precip .leaflet-pane,
+.map-precip .leaflet-top,
+.map-precip .leaflet-bottom {
+  z-index: 1;
+}

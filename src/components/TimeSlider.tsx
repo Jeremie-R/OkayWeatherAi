@@ -32,6 +32,7 @@ export function TimeSlider({ frames, nowIndex, index, onChange, tzOffsetSec }: P
   const nowFrame = frames[Math.max(0, Math.min(frames.length - 1, nowIndex))];
   const deltaMin = Math.round((current.time - nowFrame.time) / 60);
   const nowPct = (nowIndex / Math.max(1, frames.length - 1)) * 100;
+  const hasFuture = frames[frames.length - 1].time > nowFrame.time;
 
   return (
     <div className="space-y-2">
@@ -62,10 +63,10 @@ export function TimeSlider({ frames, nowIndex, index, onChange, tzOffsetSec }: P
             setPlaying(false);
             onChange(Number(e.target.value));
           }}
-          className="w-full accent-foreground"
+          className="relative z-10 w-full accent-foreground"
         />
         <div
-          className="pointer-events-none absolute top-1/2 h-3 w-px -translate-y-1/2 bg-foreground/40"
+          className="pointer-events-none absolute top-1/2 z-0 h-4 w-px -translate-y-1/2 bg-foreground/60"
           style={{ left: `${nowPct}%` }}
           aria-hidden
         />
@@ -75,6 +76,11 @@ export function TimeSlider({ frames, nowIndex, index, onChange, tzOffsetSec }: P
         <span>now</span>
         <span>+{Math.round((frames[frames.length - 1].time - nowFrame.time) / 60)}m</span>
       </div>
+      {!hasFuture && (
+        <p className="rounded-full bg-muted/60 px-3 py-1 text-center text-[10px] text-muted-foreground">
+          Nowcast unavailable for this area — showing past radar only.
+        </p>
+      )}
     </div>
   );
 }
