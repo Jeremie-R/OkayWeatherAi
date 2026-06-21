@@ -12,6 +12,8 @@ import { SunMoonSection } from "@/components/SunMoonSection";
 import { TomorrowSection } from "@/components/TomorrowSection";
 import { TenDaySection } from "@/components/TenDaySection";
 import { DayDetailModal } from "@/components/DayDetailModal";
+import { AlertRail } from "@/components/AlertRail";
+import { AlertDetailModal } from "@/components/AlertDetailModal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -36,6 +38,7 @@ function Index() {
   const [location, setLocation] = useState<SavedLocation>(() => getLast() ?? DEFAULT_LOCATION);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openDay, setOpenDay] = useState<number | null>(null);
+  const [openAlert, setOpenAlert] = useState<number | null>(null);
 
   // Try geolocation on first load only if user hasn't picked one before
   useEffect(() => {
@@ -96,6 +99,7 @@ function Index() {
         )}
         {query.data && (
           <div className="space-y-5 pb-10">
+            <AlertRail alerts={query.data.owm.alerts} onOpen={(i) => setOpenAlert(i)} />
             <TodaySection data={query.data.owm} locName={location.name} onOpenDay={() => setOpenDay(0)} />
             <UpcomingRainSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />
             <SunMoonSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />
@@ -110,6 +114,12 @@ function Index() {
           omHourly={query.data?.om?.hourly ?? null}
           dayIndex={openDay}
           onClose={() => setOpenDay(null)}
+        />
+        <AlertDetailModal
+          alerts={query.data?.owm.alerts ?? null}
+          index={openAlert}
+          tzOffset={query.data?.owm.timezone_offset ?? 0}
+          onClose={() => setOpenAlert(null)}
         />
       </div>
     </div>
