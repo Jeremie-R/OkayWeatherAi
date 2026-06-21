@@ -1,62 +1,47 @@
-## Goal
+# Upcoming rain card
 
-Refactor `src/lib/quotes.ts` so each rule owns a **pool of interchangeable variants** instead of a single line, switch picking to **truly random** (no seed), and add **one new quote bucket** (with several variants) for a condition not yet covered.
+A new short-term ("next 60 min") rain card that appears between "Now" and "SUN" — only when rain is actually expected — and re-appears at the top of the day detail page with the same chart.
 
-## Changes (single file: `src/lib/quotes.ts`)
+## Data source
 
-### 1. Reshape the data structure
+OpenWeatherMap One Call 3.0 already powers the app and includes a `minutely` array: **60 entries, one per minute, each `{ dt, precipitation }` in mm/h**. We currently exclude it via `exclude=minutely,alerts` in `src/lib/owm.ts`. We will stop excluding it (keep `alerts` excluded) and surface it. No new API, no new key. If a given location returns no `minutely` block (OWM only provides it for supported regions), the card simply doesn't render.
 
-Replace the flat `Quote[]` with a `QuoteRule[]`, where each rule groups multiple text variants:
+## Trigger rule
 
-```ts
-interface QuoteRule {
-  texts: string[];          // pool of interchangeable variants for this rule
-  rule: (c: QuoteCtx) => boolean;
-  weight?: number;          // rule-level weight (unchanged semantics)
-}
-```
+Show the card only when **any of the next 60 minutes has `precipitation > 0`** (with a small floor, e.g. `>= 0.05 mm/h`, to ignore noise). Otherwise render nothing — no empty state.
 
-Every existing quote stays — they get regrouped by rule. Example:
+## UI
 
-```ts
-{
-  texts: [
-    "It's {temp}°. Even the pigeons are taking shade.",
-    "Officially {temp}°. Unofficially: soup.",
-    "Hot enough to fry an egg on your phone case.",
-  ],
-  rule: (c) => c.tempC >= 30,
-  weight: 3,
-},
-```
+### Card on the home page
 
-Groupings preserve current trigger thresholds. Where existing quotes had slightly different thresholds within the same theme (e.g. hot at ≥30 vs ≥32 vs ≥33), the rule uses the **loosest** threshold so no quote becomes unreachable; stricter ones are folded into the same pool. Same approach for the cold, rain, snow, thunder, fog, wind, perfect-day, cloudy, feels-like-gap, and default buckets.
+- Placement: inside `TodaySection`'s parent layout in `src/routes/index.tsx`, rendered **between `TodaySection` and `SunMoonSection`**.
+- New component `src/components/UpcomingRainSection.tsx`.
+- Visual: same rounded card language as the other sections (`rounded-3xl bg-card border border-border/60 p-6 shadow-sm`).
+- Header line: small uppercase eyebrow "Upcoming rain" + a one-line human summary (e.g. "Starts in ~8 min", "Easing off in ~20 min", "Light rain for the next hour").
+- Body: a compact **area chart** (recharts `AreaChart` + `Area`) of mm/h over the next 60 minutes. X axis: minute offsets with sparse ticks ("now", "+15", "+30", "+45", "+60"). Y axis hidden. Uses existing `var(--chart-rain)` token with a soft gradient fill.
+- Whole card is a `<button>` that calls `onOpenDay()` with index 0 (today), matching how `TodaySection` opens the day modal.
 
-### 2. Truly random selection
+### Mirror in the day detail page
 
-- Drop `hashSeed` and `seedKey`. New signature: `pickQuote(ctx: QuoteCtx): string`.
-- Rule selection: weighted pick over matching rules using `Math.random()`.
-- Variant selection within the chosen rule: uniform `Math.random()` over `texts`.
-- Update `src/components/TodaySection.tsx` (the only caller) to drop the seed argument.
+- In `DayDetailModal`, when `dayIndex === 0` AND the same trigger rule passes, render an `"Upcoming rain"` `ChartCard` near the top (right after the hero card, before "Across the day"). Same area chart, slightly taller. Other days never show it.
 
-### 3. New quote bucket
+## Technical details
 
-Add a new rule for **chilly + windy** ("biting wind" — not currently covered; today's cold bucket ignores wind, and the wind bucket ignores temperature):
+1. `src/lib/owm.ts`
+   - Add `MinutelyPrecip { dt: number; precipitation: number }` and `minutely?: MinutelyPrecip[]` to `OneCallResponse`.
+   - Change the URL to `exclude=alerts` (drop `minutely`).
+2. `src/lib/weather.ts` (or co-located in the new component)
+   - Helper `buildUpcomingRain(minutely, tzOffset)` returning `{ points: {minute:number; mm:number; label:string}[]; summary: string; hasRain: boolean }`. Summary derives "starts in N min" / "easing in N min" / "light rain continuing" from the series.
+3. `src/components/UpcomingRainSection.tsx`
+   - Props: `{ data: OneCallResponse; onOpenDay?: () => void }`. Returns `null` when `!hasRain`.
+   - Uses `AreaChart`, `Area` with `type="monotone"`, `fillOpacity` gradient, no dots, light tooltip.
+4. `src/routes/index.tsx`
+   - Insert `<UpcomingRainSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />` between `TodaySection` and `SunMoonSection`.
+5. `src/components/DayDetailModal.tsx`
+   - When `dayIndex === 0` and `buildUpcomingRain(...)` reports rain, render a new `ChartCard title="Upcoming rain"` with the same area chart.
 
-```ts
-{
-  texts: [
-    "{temp}° with {wind} km/h of wind. That's the cold doing cardio.",
-    "Wind chill says hi. {feels}° and rude about it.",
-    "Bundle up — the wind is editorializing.",
-  ],
-  rule: (c) => c.tempC <= 8 && c.windKmh >= 25,
-  weight: 3,
-},
-```
+## Out of scope
 
-### Out of scope
-
-- No UI changes beyond removing the seed argument at the call site.
-- No changes to `buildCtx` or `QuoteCtx`.
-- No new files, no dependency changes.
+- No new API providers, no map/radar imagery.
+- No notifications/alerts.
+- No changes to quotes, the 8-hour Today chart, or any other section's styling.

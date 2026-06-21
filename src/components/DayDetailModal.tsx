@@ -23,6 +23,8 @@ import {
   formatTime,
 } from "@/lib/weather";
 import { buildCtx, pickQuote } from "@/lib/quotes";
+import { buildUpcomingRain } from "@/lib/upcomingRain";
+import { UpcomingRainChart } from "./UpcomingRainSection";
 
 function modeIcon(hours: OmHourly[]): string {
   const counts = new Map<string, number>();
@@ -105,6 +107,8 @@ export function DayDetailModal({
 
   const buckets = bucketHours(hours);
   const haveHourly = hours.length > 0;
+  const upcomingRain =
+    dayIndex === 0 ? buildUpcomingRain(data!.minutely, data!.current.dt) : null;
   const chartData = buckets.map((b) => {
     const hrs = b.hours;
     const lab = `${b.start.toString().padStart(2, "0")}`;
@@ -162,6 +166,15 @@ export function DayDetailModal({
             <p className="mt-4 text-sm italic text-foreground/70">"{quote}"</p>
           </div>
         </section>
+
+        {upcomingRain?.hasRain && (
+          <ChartCard title="Upcoming rain">
+            <p className="text-sm text-foreground/80">{upcomingRain.summary}</p>
+            <div className="mt-2 h-40 -mx-2">
+              <UpcomingRainChart points={upcomingRain.points} />
+            </div>
+          </ChartCard>
+        )}
 
         {/* Sun + Moon mini card */}
         <section className="px-5 mt-4">

@@ -7,6 +7,7 @@ import { getLast, setLast, saveRecent, type SavedLocation } from "@/lib/geo";
 import { Header } from "@/components/Header";
 import { LocationSheet } from "@/components/LocationSheet";
 import { TodaySection } from "@/components/TodaySection";
+import { UpcomingRainSection } from "@/components/UpcomingRainSection";
 import { SunMoonSection } from "@/components/SunMoonSection";
 import { TomorrowSection } from "@/components/TomorrowSection";
 import { TenDaySection } from "@/components/TenDaySection";
@@ -96,6 +97,7 @@ function Index() {
         {query.data && (
           <div className="space-y-5 pb-10">
             <TodaySection data={query.data.owm} locName={location.name} onOpenDay={() => setOpenDay(0)} />
+            <UpcomingRainSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />
             <SunMoonSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />
             <TomorrowSection data={query.data.owm} onOpenDetails={(i) => setOpenDay(i)} />
             <TenDaySection data={query.data.owm} onOpenDay={(i) => setOpenDay(i)} />
