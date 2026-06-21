@@ -46,12 +46,20 @@ export interface OneCallResponse {
   timezone: string;
   timezone_offset: number;
   current: OwmCurrent;
+  minutely?: MinutelyPrecip[];
   hourly: OwmHourly[];
   daily: OwmDaily[];
 }
 
+export interface MinutelyPrecip {
+  /** Unix seconds */
+  dt: number;
+  /** mm/h */
+  precipitation: number;
+}
+
 export async function fetchOneCall(lat: number, lon: number): Promise<OneCallResponse> {
-  const url = `${BASE}/data/3.0/onecall?lat=${lat}&lon=${lon}&units=metric&exclude=minutely,alerts&appid=${API_KEY}`;
+  const url = `${BASE}/data/3.0/onecall?lat=${lat}&lon=${lon}&units=metric&exclude=alerts&appid=${API_KEY}`;
   const r = await fetch(url);
   if (!r.ok) throw new Error(`Weather API error: ${r.status}`);
   return r.json();
