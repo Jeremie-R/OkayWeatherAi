@@ -20,15 +20,15 @@ export function MapPrecipitation({ lat, lon, host, framePath }: Props) {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, {
       center: [lat, lon],
-      zoom: 8,
-      minZoom: 5,
-      maxZoom: 10,
+      zoom: 6,
+      minZoom: 4,
+      maxZoom: 8,
       zoomControl: false,
       attributionControl: false,
     });
     L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
-      { subdomains: "abcd", maxZoom: 19 },
+      { subdomains: "abcd" },
     ).addTo(map);
     markerRef.current = L.circleMarker([lat, lon], {
       radius: 6,
@@ -57,7 +57,7 @@ export function MapPrecipitation({ lat, lon, host, framePath }: Props) {
   useEffect(() => {
     if (!mapRef.current || !framePath) return;
     const url = tileUrl(host, framePath);
-    const next = L.tileLayer(url, { opacity: 0.75, maxZoom: 12 }).addTo(mapRef.current);
+    const next = L.tileLayer(url, { opacity: 0.75 }).addTo(mapRef.current);
     const prev = radarRef.current;
     radarRef.current = next;
     // Remove prev once new tiles load to avoid flicker
@@ -66,5 +66,10 @@ export function MapPrecipitation({ lat, lon, host, framePath }: Props) {
     }
   }, [host, framePath]);
 
-  return <div ref={containerRef} className="h-[420px] w-full rounded-3xl overflow-hidden border border-border/60" />;
+  return (
+    <div
+      ref={containerRef}
+      className="map-precip relative isolate z-0 h-[420px] w-full rounded-3xl overflow-hidden border border-border/60"
+    />
+  );
 }

@@ -47,7 +47,8 @@ function MapPage() {
   useEffect(() => {
     if (!q.data) return;
     if (frameIdx == null || frameIdx >= q.data.frames.length) {
-      setFrameIdx(Math.max(0, q.data.nowIndex - 1));
+      // Start at "now" so future (nowcast) frames are visible to the right.
+      setFrameIdx(Math.min(q.data.frames.length - 1, q.data.nowIndex));
     }
   }, [q.data, frameIdx]);
 
