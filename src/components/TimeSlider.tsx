@@ -78,7 +78,7 @@ export function TimeSlider({ frames, nowIndex, index, onChange, tzOffsetSec }: P
       </div>
       {!hasFuture && (
         <p className="rounded-full bg-muted/60 px-3 py-1 text-center text-[10px] text-muted-foreground">
-          Nowcast unavailable for this area — showing past radar only.
+          Predictions unavailable — showing past radar only.
         </p>
       )}
     </div>
