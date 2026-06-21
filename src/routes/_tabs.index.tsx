@@ -15,7 +15,7 @@ import { DayDetailModal } from "@/components/DayDetailModal";
 import { AlertRail } from "@/components/AlertRail";
 import { AlertDetailModal } from "@/components/AlertDetailModal";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_tabs/")({
   head: () => ({
     meta: [
       { title: "OkayWeather — Honest forecasts" },
