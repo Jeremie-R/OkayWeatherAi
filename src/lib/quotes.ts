@@ -13,80 +13,155 @@ export interface QuoteCtx {
   hour: number;
 }
 
-interface Quote {
-  text: string;
+interface QuoteRule {
+  texts: string[];
   rule: (c: QuoteCtx) => boolean;
   weight?: number;
 }
 
-const QUOTES: Quote[] = [
+const QUOTES: QuoteRule[] = [
   // Big feels-like gap (priority)
-  { text: "Says {temp}° but your skin filed a complaint at {feels}°.", rule: (c) => Math.abs(c.deltaFeel) >= 4, weight: 3 },
-  { text: "On paper: {temp}°. In real life: {feels}°. Trust the body.", rule: (c) => Math.abs(c.deltaFeel) >= 5, weight: 3 },
-  { text: "Thermometer is lying. It actually feels like {feels}°.", rule: (c) => Math.abs(c.deltaFeel) >= 4, weight: 2 },
+  {
+    texts: [
+      "Says {temp}° but your skin filed a complaint at {feels}°.",
+      "On paper: {temp}°. In real life: {feels}°. Trust the body.",
+      "Thermometer is lying. It actually feels like {feels}°.",
+    ],
+    rule: (c) => Math.abs(c.deltaFeel) >= 4,
+    weight: 3,
+  },
 
   // Hot
-  { text: "It's {temp}°. Even the pigeons are taking shade.", rule: (c) => c.tempC >= 30, weight: 3 },
-  { text: "Officially {temp}°. Unofficially: soup.", rule: (c) => c.tempC >= 32, weight: 3 },
-  { text: "Sunscreen called. It wants reinforcements.", rule: (c) => c.tempC >= 28 && c.isClear, weight: 2 },
-  { text: "Hot enough to fry an egg on your phone case.", rule: (c) => c.tempC >= 33, weight: 2 },
+  {
+    texts: [
+      "It's {temp}°. Even the pigeons are taking shade.",
+      "Officially {temp}°. Unofficially: soup.",
+      "Hot enough to fry an egg on your phone case.",
+    ],
+    rule: (c) => c.tempC >= 30,
+    weight: 3,
+  },
+  {
+    texts: ["Sunscreen called. It wants reinforcements."],
+    rule: (c) => c.tempC >= 28 && c.isClear,
+    weight: 2,
+  },
 
   // Cold
-  { text: "{temp}°. Your nose is officially a popsicle.", rule: (c) => c.tempC <= 0, weight: 3 },
-  { text: "It's {temp}°. Layer like an onion, complain like a Parisian.", rule: (c) => c.tempC < 5, weight: 3 },
-  { text: "Cold enough to make your coffee feel personal.", rule: (c) => c.tempC < 3, weight: 2 },
-  { text: "{feels}°? That's not weather, that's a personal attack.", rule: (c) => c.feelsLikeC <= -5, weight: 3 },
+  {
+    texts: [
+      "{temp}°. Your nose is officially a popsicle.",
+      "It's {temp}°. Layer like an onion, complain like a Parisian.",
+      "Cold enough to make your coffee feel personal.",
+    ],
+    rule: (c) => c.tempC < 5,
+    weight: 3,
+  },
+  {
+    texts: ["{feels}°? That's not weather, that's a personal attack."],
+    rule: (c) => c.feelsLikeC <= -5,
+    weight: 3,
+  },
+
+  // Chilly + windy (new bucket)
+  {
+    texts: [
+      "{temp}° with {wind} km/h of wind. That's the cold doing cardio.",
+      "Wind chill says hi. {feels}° and rude about it.",
+      "Bundle up — the wind is editorializing.",
+    ],
+    rule: (c) => c.tempC <= 8 && c.windKmh >= 25,
+    weight: 3,
+  },
 
   // Rain
-  { text: "Rain. Because of course.", rule: (c) => c.isRain, weight: 2 },
-  { text: "It's raining. Hair plans cancelled.", rule: (c) => c.isRain, weight: 2 },
-  { text: "Bring an umbrella. Lose an umbrella. Tradition.", rule: (c) => c.isRain, weight: 2 },
-  { text: "Liquid sunshine, if you're an optimist.", rule: (c) => c.isRain, weight: 1 },
+  {
+    texts: [
+      "Rain. Because of course.",
+      "It's raining. Hair plans cancelled.",
+      "Bring an umbrella. Lose an umbrella. Tradition.",
+      "Liquid sunshine, if you're an optimist.",
+    ],
+    rule: (c) => c.isRain,
+    weight: 2,
+  },
 
   // Snow
-  { text: "Snow! It's pretty for the first 12 minutes.", rule: (c) => c.isSnow, weight: 3 },
-  { text: "Snow day. Drive like everyone forgot how cars work.", rule: (c) => c.isSnow, weight: 2 },
+  {
+    texts: [
+      "Snow! It's pretty for the first 12 minutes.",
+      "Snow day. Drive like everyone forgot how cars work.",
+    ],
+    rule: (c) => c.isSnow,
+    weight: 3,
+  },
 
   // Thunder
-  { text: "Thunder. The sky is in a mood.", rule: (c) => c.isThunder, weight: 3 },
-  { text: "Storm incoming. Unplug something dramatic.", rule: (c) => c.isThunder, weight: 2 },
+  {
+    texts: [
+      "Thunder. The sky is in a mood.",
+      "Storm incoming. Unplug something dramatic.",
+    ],
+    rule: (c) => c.isThunder,
+    weight: 3,
+  },
 
   // Fog
-  { text: "Fog. Visibility: vibes only.", rule: (c) => c.isFog, weight: 3 },
+  {
+    texts: ["Fog. Visibility: vibes only."],
+    rule: (c) => c.isFog,
+    weight: 3,
+  },
 
   // Windy
-  { text: "Wind at {wind} km/h. Hold onto your hat. And your dog.", rule: (c) => c.windKmh >= 40, weight: 3 },
-  { text: "Windy. Hair will not survive this commute.", rule: (c) => c.windKmh >= 30 && c.windKmh < 50, weight: 2 },
+  {
+    texts: ["Wind at {wind} km/h. Hold onto your hat. And your dog."],
+    rule: (c) => c.windKmh >= 40,
+    weight: 3,
+  },
+  {
+    texts: ["Windy. Hair will not survive this commute."],
+    rule: (c) => c.windKmh >= 30 && c.windKmh < 50,
+    weight: 2,
+  },
 
   // Perfect day (slightly complaining)
-  { text: "Annoyingly perfect. {temp}° and not a cloud to blame.", rule: (c) => c.isClear && c.tempC >= 18 && c.tempC <= 24 && c.windKmh < 20, weight: 3 },
-  { text: "Suspiciously nice out. What does it want?", rule: (c) => c.isClear && c.tempC >= 19 && c.tempC <= 25, weight: 2 },
-  { text: "{temp}° and sunny. Show-off weather.", rule: (c) => c.isClear && c.tempC >= 20 && c.tempC <= 26, weight: 2 },
+  {
+    texts: [
+      "Annoyingly perfect. {temp}° and not a cloud to blame.",
+      "Suspiciously nice out. What does it want?",
+      "{temp}° and sunny. Show-off weather.",
+    ],
+    rule: (c) => c.isClear && c.tempC >= 18 && c.tempC <= 26,
+    weight: 3,
+  },
 
   // Cloudy mild
-  { text: "Grey, mild, forgettable. The default.", rule: (c) => c.isCloudy && c.tempC > 10 && c.tempC < 22, weight: 1 },
-  { text: "Sky says 'maybe'. So do you.", rule: (c) => c.isCloudy, weight: 1 },
+  {
+    texts: [
+      "Grey, mild, forgettable. The default.",
+      "Sky says 'maybe'. So do you.",
+    ],
+    rule: (c) => c.isCloudy,
+    weight: 1,
+  },
 
   // Defaults
-  { text: "It's weather. It's happening.", rule: () => true, weight: 1 },
-  { text: "Look outside. That's the forecast.", rule: () => true, weight: 1 },
+  {
+    texts: [
+      "It's weather. It's happening.",
+      "Look outside. That's the forecast.",
+    ],
+    rule: () => true,
+    weight: 1,
+  },
 ];
 
-function hashSeed(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = (h * 16777619) >>> 0;
-  }
-  return h;
-}
-
-export function pickQuote(ctx: QuoteCtx, seedKey: string): string {
+export function pickQuote(ctx: QuoteCtx): string {
   const matches = QUOTES.filter((q) => q.rule(ctx));
-  const pool = matches.length ? matches : QUOTES.filter((q) => q.rule({ ...ctx }));
+  const pool = matches.length ? matches : QUOTES.filter((q) => q.rule === (() => true) || true);
   const totalWeight = pool.reduce((s, q) => s + (q.weight ?? 1), 0);
-  const seed = hashSeed(seedKey);
-  let n = seed % totalWeight;
+  let n = Math.random() * totalWeight;
   let chosen = pool[0];
   for (const q of pool) {
     const w = q.weight ?? 1;
@@ -96,7 +171,8 @@ export function pickQuote(ctx: QuoteCtx, seedKey: string): string {
     }
     n -= w;
   }
-  return chosen.text
+  const text = chosen.texts[Math.floor(Math.random() * chosen.texts.length)];
+  return text
     .replace("{temp}", Math.round(ctx.tempC).toString())
     .replace("{feels}", Math.round(ctx.feelsLikeC).toString())
     .replace("{wind}", Math.round(ctx.windKmh).toString());
