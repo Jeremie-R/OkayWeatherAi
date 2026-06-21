@@ -97,7 +97,7 @@ export function DayDetailModal({
     windKmh,
     hour: 12,
   });
-  const quote = pickQuote(ctx, `${targetDate}-${day.weather[0].id}`);
+  const quote = pickQuote(ctx);
 
   const morning = partRep(hours.filter((h) => h.hour >= 6 && h.hour < 12));
   const afternoon = partRep(hours.filter((h) => h.hour >= 12 && h.hour < 18));

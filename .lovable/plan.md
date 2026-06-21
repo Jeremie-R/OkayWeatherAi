@@ -1,44 +1,62 @@
-# Extend day-detail hourly data to all 10 days via Open-Meteo
-
 ## Goal
-Day-detail pages currently only have real hourly data for today and tomorrow (OWM One Call gives 48h). For days 3–10 the charts silently break. Fix by sourcing hourly data from **Open-Meteo** (free, no key, no signup, 16-day hourly) and keeping the existing 12 × 2-hour column layout on every day page.
 
-## Approach
+Refactor `src/lib/quotes.ts` so each rule owns a **pool of interchangeable variants** instead of a single line, switch picking to **truly random** (no seed), and add **one new quote bucket** (with several variants) for a condition not yet covered.
 
-OWM stays the primary source for everything else (today card, tomorrow card, sun/moon, 10-day summary list, current conditions). Open-Meteo is added as a second source used **only** to power the hourly charts inside the day-detail overlay.
+## Changes (single file: `src/lib/quotes.ts`)
 
-Single fetch per app load: when we load OWM, we also load a full 10-day hourly Open-Meteo response for the same coordinates and cache it. Opening any day page then just slices the cached array by date — no extra request per day.
+### 1. Reshape the data structure
 
-For consistency, today and tomorrow also switch to Open-Meteo for the day-detail charts (so all 10 day pages render from the same data shape and look identical). The main "Today" section on the home page keeps using OWM — no change there.
+Replace the flat `Quote[]` with a `QuoteRule[]`, where each rule groups multiple text variants:
 
-## Changes
+```ts
+interface QuoteRule {
+  texts: string[];          // pool of interchangeable variants for this rule
+  rule: (c: QuoteCtx) => boolean;
+  weight?: number;          // rule-level weight (unchanged semantics)
+}
+```
 
-### Data layer
-- `src/lib/openmeteo.ts` (new): typed fetcher for Open-Meteo's `/v1/forecast` endpoint. Request hourly fields: `temperature_2m`, `apparent_temperature`, `precipitation`, `precipitation_probability`, `weathercode`, `wind_speed_10m`, `wind_gusts_10m`, `wind_direction_10m`, `is_day`. Params: `forecast_days=10`, `timezone=auto`, `wind_speed_unit=ms`. Returns a flat array of hourly points with a JS `Date`.
-- `src/lib/weather.ts`: extend the shared `WeatherData` type with an `openMeteoHourly` field (array of hourly points). Add a helper `getHoursForDay(hourly, dayIndex, tzOffsetSec)` that returns the 24 hours belonging to a given local day.
-- Weather code mapping helper: small function mapping Open-Meteo WMO codes → existing OWM icon codes (e.g. `01d`, `10n`, `13d`) so `WeatherIcon` keeps working unchanged. Day/night decided from `is_day`.
+Every existing quote stays — they get regrouped by rule. Example:
 
-### Fetch wiring
-- Wherever OWM One Call is fetched today (root loader / query), fire Open-Meteo in parallel with `Promise.all`. Attach result to the same query data object. If Open-Meteo fails, day pages 3–10 degrade gracefully (charts show "Hourly forecast unavailable" placeholder); OWM-driven UI is unaffected.
+```ts
+{
+  texts: [
+    "It's {temp}°. Even the pigeons are taking shade.",
+    "Officially {temp}°. Unofficially: soup.",
+    "Hot enough to fry an egg on your phone case.",
+  ],
+  rule: (c) => c.tempC >= 30,
+  weight: 3,
+},
+```
 
-### Day detail overlay
-- `src/components/DayDetailModal.tsx`: replace the current OWM-hourly source with `openMeteoHourly` for **all** day indices (0–9). Keep the existing `bucketHours` logic that averages into 12 × 2h columns — it already works on any 24-point hourly array. Inputs change:
-  - temperature/feels-like → from `temperature_2m` / `apparent_temperature`
-  - rain chart → from `precipitation` (mm) + `precipitation_probability`
-  - wind chart → from `wind_speed_10m` + `wind_gusts_10m` + `wind_direction_10m`
-  - per-column weather icon → from mapped `weathercode` + `is_day`
-- Remove the now-unused OWM hourly slicing path inside the modal.
+Groupings preserve current trigger thresholds. Where existing quotes had slightly different thresholds within the same theme (e.g. hot at ≥30 vs ≥32 vs ≥33), the rule uses the **loosest** threshold so no quote becomes unreachable; stricter ones are folded into the same pool. Same approach for the cold, rain, snow, thunder, fog, wind, perfect-day, cloudy, feels-like-gap, and default buckets.
 
-### Cleanup
-- Keep `owm.ts` hourly types intact (still used by the home `TodaySection` chart). No changes to TodaySection, TomorrowSection, SunMoonSection, TenDaySection, Header, LocationSheet.
+### 2. Truly random selection
 
-## Technical notes
-- Open-Meteo endpoint: `https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weathercode,wind_speed_10m,wind_gusts_10m,wind_direction_10m,is_day&forecast_days=10&timezone=auto&wind_speed_unit=ms`
-- No API key, no auth header, generous free limits — safe to call from the browser.
-- Day grouping uses the `timezone=auto` offset returned by Open-Meteo (`utc_offset_seconds`) so local-midnight boundaries match what the user sees, regardless of their device timezone.
-- 12 × 2h buckets: pair hours `[0,1]`, `[2,3]`, … `[22,23]`. Temperature/feels-like = mean; rain mm = sum; rain probability = max; wind speed/gusts = mean; wind dir = vector-averaged; icon = mode of mapped codes.
+- Drop `hashSeed` and `seedKey`. New signature: `pickQuote(ctx: QuoteCtx): string`.
+- Rule selection: weighted pick over matching rules using `Math.random()`.
+- Variant selection within the chosen rule: uniform `Math.random()` over `texts`.
+- Update `src/components/TodaySection.tsx` (the only caller) to drop the seed argument.
 
-## Out of scope
-- No changes to OWM key handling, no new secrets.
-- No UI/layout changes to existing cards or the modal shell — only the data feeding the 3 charts changes.
-- No caching layer beyond the existing query — one Open-Meteo call per location load.
+### 3. New quote bucket
+
+Add a new rule for **chilly + windy** ("biting wind" — not currently covered; today's cold bucket ignores wind, and the wind bucket ignores temperature):
+
+```ts
+{
+  texts: [
+    "{temp}° with {wind} km/h of wind. That's the cold doing cardio.",
+    "Wind chill says hi. {feels}° and rude about it.",
+    "Bundle up — the wind is editorializing.",
+  ],
+  rule: (c) => c.tempC <= 8 && c.windKmh >= 25,
+  weight: 3,
+},
+```
+
+### Out of scope
+
+- No UI changes beyond removing the seed argument at the call site.
+- No changes to `buildCtx` or `QuoteCtx`.
+- No new files, no dependency changes.

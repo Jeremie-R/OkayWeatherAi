@@ -26,7 +26,7 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
     hour: localHour(current.dt, timezone_offset),
   });
   const today = new Date((current.dt + timezone_offset) * 1000).toISOString().slice(0, 10);
-  const quote = pickQuote(ctx, `${locName}-${today}-${current.weather[0].id}`);
+  const quote = pickQuote(ctx);
 
   const slice = hourly.slice(0, 8);
   const temps = slice.map((h) => Math.round(h.temp));
