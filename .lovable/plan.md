@@ -1,47 +1,51 @@
-# Upcoming rain card
+## Add weather alert rail
 
-A new short-term ("next 60 min") rain card that appears between "Now" and "SUN" — only when rain is actually expected — and re-appears at the top of the day detail page with the same chart.
+OpenWeather's One Call 3.0 already returns an `alerts` array on the same response we fetch — we just need to stop excluding it and surface it in the UI.
 
-## Data source
+### Data
 
-OpenWeatherMap One Call 3.0 already powers the app and includes a `minutely` array: **60 entries, one per minute, each `{ dt, precipitation }` in mm/h**. We currently exclude it via `exclude=minutely,alerts` in `src/lib/owm.ts`. We will stop excluding it (keep `alerts` excluded) and surface it. No new API, no new key. If a given location returns no `minutely` block (OWM only provides it for supported regions), the card simply doesn't render.
+`src/lib/owm.ts`
+- Add `OwmAlert` interface: `sender_name: string; event: string; start: number; end: number; description: string; tags: string[]`.
+- Add `alerts?: OwmAlert[]` to `OneCallResponse`.
+- Change fetch URL `exclude=alerts` → `exclude=` (we already kept minutely; now keep alerts too).
 
-## Trigger rule
+### Alert rail (home)
 
-Show the card only when **any of the next 60 minutes has `precipitation > 0`** (with a small floor, e.g. `>= 0.05 mm/h`, to ignore noise). Otherwise render nothing — no empty state.
+New `src/components/AlertRail.tsx`
+- Props: `alerts?: OwmAlert[]`, `onOpen: (index: number) => void`.
+- Returns `null` if no alerts.
+- Renders a short, single-line pill above the Now card:
+  - Subtle light surface in line with our cards: `rounded-2xl border border-border/60 bg-muted/40` (no heavy color), small triangle alert icon (`lucide-react` `AlertTriangle`) in `text-foreground/70`.
+  - Text: the alert `event` (e.g. "Yellow wind warning"), truncated with `truncate`, plus a tiny `chevron-right`.
+  - Sender shown as a faint suffix only if room (`text-muted-foreground`).
+  - Full-width button, `h-11`, horizontal padding to match other sections (`mx-5`).
+- If multiple alerts: render one pill per alert, stacked with `space-y-2` (keeps it subtle, no carousel).
 
-## UI
+Insert in `src/routes/index.tsx` directly above `<TodaySection>`:
+```
+<AlertRail alerts={query.data.owm.alerts} onOpen={(i) => setOpenAlert(i)} />
+```
 
-### Card on the home page
+### Alert detail "page"
 
-- Placement: inside `TodaySection`'s parent layout in `src/routes/index.tsx`, rendered **between `TodaySection` and `SunMoonSection`**.
-- New component `src/components/UpcomingRainSection.tsx`.
-- Visual: same rounded card language as the other sections (`rounded-3xl bg-card border border-border/60 p-6 shadow-sm`).
-- Header line: small uppercase eyebrow "Upcoming rain" + a one-line human summary (e.g. "Starts in ~8 min", "Easing off in ~20 min", "Light rain for the next hour").
-- Body: a compact **area chart** (recharts `AreaChart` + `Area`) of mm/h over the next 60 minutes. X axis: minute offsets with sparse ticks ("now", "+15", "+30", "+45", "+60"). Y axis hidden. Uses existing `var(--chart-rain)` token with a soft gradient fill.
-- Whole card is a `<button>` that calls `onOpenDay()` with index 0 (today), matching how `TodaySection` opens the day modal.
+The app is a single route with overlay modals (see `DayDetailModal`). Match that pattern so back/exit behavior is consistent.
 
-### Mirror in the day detail page
+New `src/components/AlertDetailModal.tsx`
+- Props: `alerts: OwmAlert[] | null; index: number | null; onClose: () => void`.
+- Full-screen sheet identical in framing to `DayDetailModal`: same header with a back chevron (`onClose`) and title = alert `event`, content scrolls.
+- Body:
+  - Sender (`sender_name`), small muted.
+  - Effective window: formatted `start` – `end` in the location's local time (reuse helpers in `weather.ts` if available, otherwise inline `Intl.DateTimeFormat`).
+  - Tags as small pill chips (if any).
+  - Full `description` rendered as `whitespace-pre-wrap` paragraph (OWM descriptions contain newlines and are plain text).
+- Esc / back chevron / backdrop click all call `onClose`, mirroring `DayDetailModal`.
 
-- In `DayDetailModal`, when `dayIndex === 0` AND the same trigger rule passes, render an `"Upcoming rain"` `ChartCard` near the top (right after the hero card, before "Across the day"). Same area chart, slightly taller. Other days never show it.
+Wire in `src/routes/index.tsx`:
+- `const [openAlert, setOpenAlert] = useState<number | null>(null);`
+- Render `<AlertDetailModal alerts={query.data?.owm.alerts ?? null} index={openAlert} onClose={() => setOpenAlert(null)} />` next to `DayDetailModal`.
 
-## Technical details
+### Out of scope
+- No new providers, no notifications, no severity color coding beyond a single subtle icon, no changes to other sections.
 
-1. `src/lib/owm.ts`
-   - Add `MinutelyPrecip { dt: number; precipitation: number }` and `minutely?: MinutelyPrecip[]` to `OneCallResponse`.
-   - Change the URL to `exclude=alerts` (drop `minutely`).
-2. `src/lib/weather.ts` (or co-located in the new component)
-   - Helper `buildUpcomingRain(minutely, tzOffset)` returning `{ points: {minute:number; mm:number; label:string}[]; summary: string; hasRain: boolean }`. Summary derives "starts in N min" / "easing in N min" / "light rain continuing" from the series.
-3. `src/components/UpcomingRainSection.tsx`
-   - Props: `{ data: OneCallResponse; onOpenDay?: () => void }`. Returns `null` when `!hasRain`.
-   - Uses `AreaChart`, `Area` with `type="monotone"`, `fillOpacity` gradient, no dots, light tooltip.
-4. `src/routes/index.tsx`
-   - Insert `<UpcomingRainSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />` between `TodaySection` and `SunMoonSection`.
-5. `src/components/DayDetailModal.tsx`
-   - When `dayIndex === 0` and `buildUpcomingRain(...)` reports rain, render a new `ChartCard title="Upcoming rain"` with the same area chart.
-
-## Out of scope
-
-- No new API providers, no map/radar imagery.
-- No notifications/alerts.
-- No changes to quotes, the 8-hour Today chart, or any other section's styling.
+### Notes
+- "Page" is implemented as a full-screen overlay to match the existing `DayDetailModal` pattern (this app has a single route). If you'd rather have a real `/alerts/$index` route, say so and I'll switch the plan.
