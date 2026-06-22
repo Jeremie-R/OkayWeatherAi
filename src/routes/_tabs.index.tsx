@@ -38,7 +38,7 @@ function Index() {
   const [location, setLocation] = useState<SavedLocation>(() => getLast() ?? DEFAULT_LOCATION);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openDay, setOpenDay] = useState<number | null>(null);
-  const [openAlert, setOpenAlert] = useState<number | null>(null);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   // Try geolocation on first load only if user hasn't picked one before
   useEffect(() => {
@@ -99,7 +99,7 @@ function Index() {
         )}
         {query.data && (
           <div className="space-y-5 pb-10">
-            <AlertRail alerts={query.data.owm.alerts} onOpen={(i) => setOpenAlert(i)} />
+            <AlertRail alerts={query.data.owm.alerts} onOpen={() => setAlertsOpen(true)} />
             <TodaySection data={query.data.owm} locName={location.name} onOpenDay={() => setOpenDay(0)} />
             <UpcomingRainSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />
             <SunMoonSection data={query.data.owm} onOpenDay={() => setOpenDay(0)} />
@@ -117,9 +117,9 @@ function Index() {
         />
         <AlertDetailModal
           alerts={query.data?.owm.alerts ?? null}
-          index={openAlert}
+          open={alertsOpen}
           tzOffset={query.data?.owm.timezone_offset ?? 0}
-          onClose={() => setOpenAlert(null)}
+          onClose={() => setAlertsOpen(false)}
         />
       </div>
     </div>
