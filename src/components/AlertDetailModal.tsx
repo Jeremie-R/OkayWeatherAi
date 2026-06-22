@@ -4,16 +4,16 @@ import type { OwmAlert } from "@/lib/owm";
 
 export function AlertDetailModal({
   alerts,
-  index,
+  open: openProp,
   tzOffset,
   onClose,
 }: {
   alerts: OwmAlert[] | null;
-  index: number | null;
+  open: boolean;
   tzOffset: number;
   onClose: () => void;
 }) {
-  const open = alerts != null && index != null && alerts[index] != null;
+  const open = openProp && alerts != null && alerts.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -28,7 +28,9 @@ export function AlertDetailModal({
   }, [open, onClose]);
 
   if (!open) return null;
-  const a = alerts![index!];
+  const list = alerts!;
+  const title =
+    list.length === 1 ? "Weather alert" : `${list.length} weather alerts`;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background animate-in fade-in duration-150">
@@ -41,49 +43,53 @@ export function AlertDetailModal({
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
           <div className="ml-auto mr-3 text-right">
-            <p className="text-sm font-semibold">Weather alert</p>
+            <p className="text-sm font-semibold">{title}</p>
           </div>
         </header>
 
-        <section className="px-5 pt-5">
-          <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0 text-foreground/70" />
-              <div className="min-w-0">
-                <h1 className="text-xl font-semibold leading-tight">{a.event}</h1>
-                {a.sender_name && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Issued by {a.sender_name}
-                  </p>
+        {list.map((a, i) => (
+          <div key={`${a.event}-${a.start}-${i}`}>
+            <section className="px-5 pt-5">
+              <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0 text-foreground/70" />
+                  <div className="min-w-0">
+                    <h1 className="text-xl font-semibold leading-tight">{a.event}</h1>
+                    {a.sender_name && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Issued by {a.sender_name}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                      {formatRange(a.start, a.end, tzOffset)}
+                    </p>
+                  </div>
+                </div>
+
+                {a.tags && a.tags.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {a.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-muted-foreground"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                  {formatRange(a.start, a.end, tzOffset)}
+              </div>
+            </section>
+
+            <section className="px-5 pt-4">
+              <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                  {a.description || "No further details provided."}
                 </p>
               </div>
-            </div>
-
-            {a.tags && a.tags.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {a.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-muted-foreground"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
+            </section>
           </div>
-        </section>
-
-        <section className="px-5 pt-4">
-          <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-              {a.description || "No further details provided."}
-            </p>
-          </div>
-        </section>
+        ))}
       </div>
     </div>
   );
