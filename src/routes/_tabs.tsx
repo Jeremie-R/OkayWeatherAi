@@ -11,8 +11,8 @@ function TabsLayout() {
     <>
       <div className="pb-16">
         <Outlet />
+        <InstallHint />
       </div>
-      <InstallHint />
       <TabBar />
     </>
   );
