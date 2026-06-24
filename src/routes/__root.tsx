@@ -89,7 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "Simple weather app" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1781617651175-iconweather.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1781617651175-iconweather.webp" },
-      { name: "theme-color", content: "#0b1220" },
+      { name: "theme-color", content: "#9e93c7" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
