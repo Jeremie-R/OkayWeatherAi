@@ -36,7 +36,6 @@ const QUOTES: QuoteRule[] = [
       "\"The trust of the innocent is the liar's most useful tool.\" — Stephen King",
       "\"There are three kinds of lies: lies, damned lies, and statistics.\" — Mark Twain",
       "\"The contrast between what is and what seems to be.\" — Marcus Aurelius",
-      // New Additions
       "Your sensory receptors are currently experiencing a severe calibration error.",
       "\"What is real? How do you define real?\" — Morpheus, The Matrix",
       "The metric system has temporarily lost control of the narrative.",
@@ -46,7 +45,22 @@ const QUOTES: QuoteRule[] = [
     weight: 3,
   },
 
-  // Hot
+  // Hot (Extreme Heat Block Updated)
+  {
+    texts: [
+      "Free sauna today.",
+      "\"The desert's not kind to humans, either.\" — Liet Kynes",
+      "That moment where you consider buying an AC",
+      "Mass extinction event",
+      "You have finally reached global warming",
+      "Congratulations, you are now a slow-cooker experiment.",
+      "Even hell's has not reached this temperature yet.",
+      "\"The sun is a tyrant.\" — Wallace Stevens",
+      
+    ],
+    rule: (c) => c.tempC >= 38,
+    weight: 3,
+  },
   {
     texts: [
       "It's {temp}°. Even the pigeons are taking shade.",
@@ -54,7 +68,7 @@ const QUOTES: QuoteRule[] = [
       "Hot enough to fry an egg on your phone case.",
       "Sweating while completely stationary. Seamless design.",
       "{temp}°: The atmosphere has texture, and it is aggressive.",
-      "Your structural integrity is melting at {temp}°.",
+      "It's not a fever, it's just hot.",
       "Every surface is now a preheated oven. Welcome to {temp}°.",
       "Hydration is no longer a lifestyle choice; it's a hostage negotiation at {temp}°.",
       "\"It's not the heat, it's the humanity.\" — Oscar Wilde",
@@ -62,13 +76,12 @@ const QUOTES: QuoteRule[] = [
       "\"Boy, it's hot. It's hot. It's like a Walt Disney movie.\" — Robin Williams",
       "\"I feel like I'm melting.\" — Wicked Witch of the West",
       "\"Hot town, summer in the city.\" — The Lovin' Spoonful",
-      // New Additions
       "Yes, global warming is highly functional at {temp}°.",
       "Air conditioning is no longer a luxury; it is a baseline human rights issue.",
       "\"It's hot. Damn hot.\" — Adrian Cronauer, Good Morning, Vietnam",
       "Your biological cooling systems have entered a state of catastrophic failure.",
     ],
-    rule: (c) => c.tempC >= 30,
+    rule: (c) => c.tempC >= 33,
     weight: 3,
   },
   {
@@ -84,7 +97,6 @@ const QUOTES: QuoteRule[] = [
       "\"Keep your face always toward the sunshine—and shadows will fall behind you.\" — Walt Whitman",
       "\"The sun, the bright sun, that brings back, not light alone, but new life, and hope.\" — Charles Dickens",
       "\"Fear no more the heat o' the sun.\" — William Shakespeare",
-      // New Additions
       "Time to touch grass.",
       "\"The sun is a wondrous body. Like a magnificent father.\" — Solaire of Astora",
       "Zero cloud cover. The upper atmosphere has absolutely nothing to hide.",
@@ -110,13 +122,29 @@ const QUOTES: QuoteRule[] = [
       "\"Cold! If the Good Lord had wanted us to be cold, he would have made us furrier.\" — Lorelai Gilmore",
       "\"I love the cold weather. It means you get to wear your favorite coats.\" — Marilyn Monroe",
       "\"The cold never bothered me anyway.\" — Elsa",
-      // New Additions
       "It is cold. Just purely, aggressively cold. Plan your movements accordingly.",
       "\"I'm freezing my royal testicles off.\" — Prince Edward, Enchanted",
       "All normal biological functions have decelerated to preserve core architecture.",
       "\"The cold is a separate entity.\" — Arthur Conan Doyle",
     ],
     rule: (c) => c.tempC < 5,
+    weight: 3,
+  },
+
+  // Extreme cold (Extreme Cold Block Updated)
+  {
+    texts: [
+      "I feel sorry for you",
+      "Technically, you chose to live here",
+      "Frostbites season started.",
+      
+      "Where is global warming when we need it. - Donald Trump",
+      
+      "The day after tomorrow...",
+      "Careful, it's a minus in front of the number.",
+      
+    ],
+    rule: (c) => c.tempC < -12,
     weight: 3,
   },
 
@@ -137,7 +165,6 @@ const QUOTES: QuoteRule[] = [
       // New Additions
       "Absolute thermal bankruptcy achieved at {feels}°.",
       "\"Our teeth chattered so loud we couldn't hear ourselves think.\" — Ernest Shackleton",
-      
       "\"If you're cold, you're not moving fast enough.\" — Soviet Proverb",
     ],
     rule: (c) => c.feelsLikeC <= -5,
@@ -161,7 +188,6 @@ const QUOTES: QuoteRule[] = [
       "\"Blow, blow, thou winter wind.\" — William Shakespeare",
       "\"The wind is blowing cold from the north.\" — J.R.R. Tolkien",
       // New Additions
-      
       "\"The wind is a wild beast.\" — Victor Hugo",
       "Pure environmental hostility. Wear everything you own simultaneously.",
       "\"Eva?\" — WALL-E",
@@ -178,9 +204,9 @@ const QUOTES: QuoteRule[] = [
       "Bring an umbrella. Lose an umbrella. Tradition.",
       "Liquid sunshine, if you're an optimist.",
       "Gravity is delivering gray water directly to your face.",
-      "Suboptimal humidity levels. High probability of wet socks.",
+      "High probability of wet socks.",
       "Grey skies, damp denim, minor existential dread.",
-      "The sky is leaking and nobody is answering the maintenance ticket.",
+      "The sky is leaking.",
       "Every puddle is a surprise personality test.",
       "\"Some people feel the rain. Others just get wet.\" — Bob Marley",
       "\"I'm singing in the rain, just singing in the rain.\" — Gene Kelly",
@@ -203,20 +229,20 @@ const QUOTES: QuoteRule[] = [
       "Snow! It's pretty for the first 12 minutes.",
       "Snow day. Drive like everyone forgot how cars work.",
       "Aesthetically pleasing, logistically disastrous.",
-      "Slush in production. Prepare your footwear.",
-      "Charming on Instagram, highly abrasive on the sidewalk.",
-      "Snow: a billion tiny hydration ambushes.",
-      "The world is now a soft-serve machine. Tread carefully.",
+      
+      "Charming on Instagram, unwanted icerink videos queuing up.",
+      
+      
       "\"The snow is sparkling like a million little diamonds.\" — L.M. Montgomery",
       "\"Do you wanna build a snowman?\" — Anna",
       "\"I know a little text about snow.\" — Karl Lagerfeld",
       "\"Snow is fine when you're inside.\" — Orhan Pamuk",
       "\"A snow day is a beautiful thing.\" — Rachel Cohn",
-      // New Additions
+      
       "Yes, it is actually snowing.",
       "\"The snow is a white shroud.\" — Mary Shelley",
       "Municipal logistics are entirely dead.",
-      "\"Snowing is a clean slate.\" — John Green",
+      
     ],
     rule: (c) => c.isSnow,
     weight: 3,
@@ -227,21 +253,20 @@ const QUOTES: QuoteRule[] = [
     texts: [
       "Thunder. The sky is in a mood.",
       "Storm incoming. Unplug something dramatic.",
-      "Atmospheric drama. Nature is typing in all caps.",
-      "Sound effects provided by the upper atmosphere.",
+      "Atmospheric drama.",
+      "New Sound effects unlocked.",
       "A free light show with immediate sonic consequences.",
-      "The sky is rehearsing a drum solo. No refunds.",
-      "Clouds are arguing loudly. Best not to get involved.",
-      "\"Thunder is good, thunder is impressive; but it is lightning that does the work.\" — Mark Twain",
+      
+      "Best not to get involved.",
+      
       "\"The thunder child is fighting.\" — H.G. Wells",
       "\"The sky was a bruised purple and the thunder rolled.\" — Stephen King",
       "\"Thunder, feel the thunder.\" — Imagine Dragons",
       "\"I am Thor, Son of Odin!\" — Thor",
-      // New Additions
       
       "\"The sky tore open.\" — Haruki Murakami",
       "Lights from the sky, meh, what else is new.",
-      "\"I am the storm.\" — Ethan Hunt, Mission: Impossible - Fallout",
+      "\"I am the storm.\" — Ethan Hunt",
     ],
     rule: (c) => c.isThunder,
     weight: 3,
@@ -254,14 +279,12 @@ const QUOTES: QuoteRule[] = [
       "The world hasn't rendered properly yet. Please wait.",
       "Silent Hill mode activated. Watch your step.",
       "Like walking through a poorly conceptualized cloud.",
-      "Fog: the sky's way of turning down the draw distance.",
-      "Every lamppost is now a main character.",
-      "\"The fog comes on little cat feet.\" — Carl Sandburg",
+      "The mist is hungry",
+      
       "\"It was a foggy night, a night when things happen.\" — Raymond Chandler",
       "\"Fog everywhere. Fog up the river, fog down the river.\" — Charles Dickens",
       "\"Visions of the fog.\" — Bob Dylan",
       "\"Mist and fog, and a cold wind.\" — J.R.R. Tolkien",
-      // New Additions
       "Studies suggest you had miopia annyway.",
       "\"There's something in the mist!\" — David Drayton, The Mist",
       "You wouldn't see the alien even if it was in front of you.",
@@ -275,8 +298,8 @@ const QUOTES: QuoteRule[] = [
   {
     texts: [
       "Wind at {wind} km/h. Hold onto your hat. And your dog.",
-      "Nature's leaf blower is set to maximum.",
-      "{wind} km/h. Fighting the air just to move forward.",
+      "Nature's leaf blower.",
+      
       "The atmosphere is moving faster than your career path.",
       "{wind} km/h. Walking is now a sport.",
       "Trash cans are auditioning for flight school at {wind} km/h.",
@@ -285,11 +308,9 @@ const QUOTES: QuoteRule[] = [
       "\"It's a bit windy, isn't it?\" — Winnie the Pooh",
       "\"Gone with the wind.\" — Margaret Mitchell",
       "\"The wind shook the house.\" — Virginia Woolf",
-      // New Additions
-      
       "\"The wind is blowing a gale.\" — Virginia Woolf",
-      "A highly aggressive propulsion experiment is currently operating in the streets.",
-      "The atmospheric layout is actively rejected by physics.",
+      "A highly aggressive propulsion experiment.",
+      
     ],
     rule: (c) => c.windKmh >= 40,
     weight: 3,
@@ -300,16 +321,15 @@ const QUOTES: QuoteRule[] = [
     texts: [
       "Windy. Hair will not survive this commute.",
       "Slightly too aggressive air. Unsolicited resistance.",
-      "{wind} km/h: Solid day for wind turbines, terrible for human dignity.",
-      "The wind is trying to make a point. Loudly.",
-      "Gusty enough to turn your shopping list into public art.",
+      "{wind} km/h: Solid day for wind turbines, terrible for human.",
+      "The wind is trying to make a point.",
+      
       "{wind} km/h. Every doorway is a wind tunnel exam.",
       "\"*Beep boop whistle chirp*\" — R2-D2",
       "\"The wind will whisper your name.\" — Jimi Hendrix",
       "\"The wind is rising! We must try to live!\" — Paul Valéry",
       "\"A wind has blown the rain away.\" — E.E. Cummings",
       "\"The wind plays its own tune.\" — Haruki Murakami",
-      // New Additions
       "Just enough environmental resistance to make you look slightly frantic.",
       "The air is expressing a highly specific personal grievance at {wind} km/h.",
       "\"The air is restless.\" — Bram Stoker",
@@ -335,11 +355,9 @@ const QUOTES: QuoteRule[] = [
       "\"Oh, what a lovely day!\" — Nux",
       "\"A perfect summer day is when the sun is shining.\" — Sam Adams",
       "\"It's a beautiful day, don't let it get away.\" — U2",
-      // New Additions
       "Yes, it's actually sunny today.",
       "Time to touch grass.",
       "\"What a day. What a beautiful day!\" — Max Rockatansky, Mad Max: Fury Road",
-      
     ],
     rule: (c) => c.isClear && c.tempC >= 18 && c.tempC <= 26,
     weight: 3,
@@ -350,21 +368,18 @@ const QUOTES: QuoteRule[] = [
     texts: [
       "Grey, mild, forgettable. The default.",
       "Sky says 'maybe'. So do you.",
-      "An uninspired canvas. Total design apathy from the sky.",
-      "Neither warm nor cold. The lukewarm tap water of weather.",
-      "Visual white noise. Move along.",
+      
+      "Neither warm nor cold.",
+      "Visual white noise.",
       "Cloudy and indecisive. Classic avoidant attachment sky.",
-      "The sky is buffering. Today will be soft, slow, and vague.",
+      "soft, slow, and vague.",
       "\"Hodor.\" — Hodor",
       "\"The sky was the color of television, tuned to a dead channel.\" — William Gibson",
       "\"Clouds come floating into my life, no longer to carry rain or usher storm, but to add color to my sunset sky.\" — Rabindranath Tagore",
       "\"A cloudy day is no match for a sunny disposition.\" — William Arthur Ward",
       "\"The sky is low, the clouds are mean.\" — Emily Dickinson",
-      // New Additions
-      
       "\"The sky is a uniform, heavy grey.\" — Charlotte Brontë",
       "Neither inspiring nor offensive.",
-      
     ],
     rule: (c) => c.isCloudy,
     weight: 1,
@@ -378,17 +393,15 @@ const QUOTES: QuoteRule[] = [
       "Standard operational parameters. Nothing to report.",
       "The background simulation continues.",
       "Status: Weather exists.",
-      "A day. With weather. What a concept.",
-      "No strong feelings. The weather is also indifferent.",
+      
+      "Indifferent.",
       "\"Weather forecast for tonight: dark.\" — George Carlin",
       "\"There is no such thing as bad weather, only different kinds of good weather.\" — John Ruskin",
       "\"Climate is what we expect, weather is what we get.\" — Mark Twain",
       "\"Everybody talks about the weather, but nobody does anything about it.\" — Charles Dudley Warner",
       "\"Whether the weather be fine, or whether the weather be not.\" — Traditional Nursery Rhyme",
-      // New Additions
       "Status check: The sky is up. The ground remains down.",
       "\"Tomorrow is another day.\" — Scarlett O'Hara, Gone with the Wind",
-      
       "\"It's just the weather.\" — Casual observation",
     ],
     rule: () => true,
