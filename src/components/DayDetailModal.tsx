@@ -221,16 +221,6 @@ export function DayDetailModal({
           </ChartCard>
         )}
 
-        {/* Today-only: UV + Air quality */}
-        {dayIndex === 0 && (
-          <section className="px-5 mt-4">
-            <div className="grid grid-cols-2 gap-2">
-              <UvCard uvi={day.uvi ?? data!.current.uvi ?? 0} />
-              <AqiCard aqi={aqi?.aqi ?? null} />
-            </div>
-          </section>
-        )}
-
         {/* Sun + Moon mini card */}
         <section className="px-5 mt-4">
           <div className="rounded-3xl bg-card border border-border/60 p-4 flex items-center justify-between gap-4">
@@ -418,6 +408,16 @@ export function DayDetailModal({
           <section className="px-5 mt-4">
             <div className="rounded-2xl border border-border/60 bg-card p-6 text-center text-sm text-muted-foreground">
               Hour-by-hour detail isn't available this far ahead.
+            </div>
+          </section>
+        )}
+
+        {/* Today-only: UV + Air quality (page footer) */}
+        {dayIndex === 0 && (
+          <section className="px-5 mt-4">
+            <div className="grid grid-cols-2 gap-2">
+              <UvCard uvi={day.uvi ?? data!.current.uvi ?? 0} />
+              <AqiCard aqi={aqi?.aqi ?? null} />
             </div>
           </section>
         )}
