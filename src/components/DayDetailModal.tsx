@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowLeft, Sunrise, Sunset } from "lucide-react";
+import { ArrowLeft, Sunrise, Sunset, Navigation, Sun, Wind as WindIcon } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -21,10 +21,27 @@ import {
   moonEmoji,
   moonPhaseName,
   formatTime,
+  windTier,
+  windTierTitle,
+  WIND_TIER_COLOR,
+  averageDegrees,
+  cardinalFromDeg,
+  degDelta,
 } from "@/lib/weather";
 import { buildCtx, pickQuote } from "@/lib/quotes";
 import { buildUpcomingRain } from "@/lib/upcomingRain";
 import { UpcomingRainChart } from "./UpcomingRainSection";
+import {
+  type AirQuality,
+  aqiTier,
+  AQI_TIER_LABEL,
+  AQI_TIER_COLOR,
+  uvTier,
+  UV_TIER_LABEL,
+  UV_TIER_COLOR,
+  type UvTier,
+  type AqiTier,
+} from "@/lib/airquality";
 
 function modeIcon(hours: OmHourly[]): string {
   const counts = new Map<string, number>();
@@ -61,11 +78,13 @@ function partRep(hours: OmHourly[]) {
 export function DayDetailModal({
   data,
   omHourly,
+  aqi,
   dayIndex,
   onClose,
 }: {
   data: OneCallResponse | null;
   omHourly: OmHourly[] | null;
+  aqi: AirQuality | null;
   dayIndex: number | null;
   onClose: () => void;
 }) {
@@ -113,7 +132,7 @@ export function DayDetailModal({
     const hrs = b.hours;
     const lab = `${b.start.toString().padStart(2, "0")}`;
     if (!hrs.length) {
-      return { hour: lab, temp: null, rain: 0, pop: 0, wind: 0, icon: "" };
+      return { hour: lab, temp: null, rain: 0, pop: 0, wind: 0, icon: "", windDeg: null as number | null };
     }
     return {
       hour: lab,
@@ -122,8 +141,34 @@ export function DayDetailModal({
       pop: Math.round(hrs.reduce((s, h) => s + h.popPct, 0) / hrs.length),
       wind: Math.round(hrs.reduce((s, h) => s + h.windKmh, 0) / hrs.length),
       icon: modeIcon(hrs),
+      windDeg: averageDegrees(hrs.map((h) => h.windDeg)),
     };
   });
+
+  const hasRain = chartData.some((d) => d.rain > 0 || d.pop >= 25);
+
+  // Wind day-level tier from mean of bucketed winds
+  const dayMeanWind =
+    chartData.length > 0
+      ? chartData.reduce((s, d) => s + d.wind, 0) / chartData.length
+      : windKmh;
+  const dayWindTier = windTier(dayMeanWind);
+  const windTitle = windTierTitle(dayWindTier);
+
+  // Decide which buckets get an arrow above the bar — only meaningful direction changes.
+  const arrowFlags: boolean[] = (() => {
+    const out: boolean[] = new Array(chartData.length).fill(false);
+    let lastShown: number | null = null;
+    for (let i = 0; i < chartData.length; i++) {
+      const d = chartData[i];
+      if (d.windDeg == null || d.wind < 5) continue;
+      if (lastShown == null || degDelta(d.windDeg, lastShown) >= 45) {
+        out[i] = true;
+        lastShown = d.windDeg;
+      }
+    }
+    return out;
+  })();
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background animate-in fade-in duration-150">
@@ -174,6 +219,16 @@ export function DayDetailModal({
               <UpcomingRainChart points={upcomingRain.points} />
             </div>
           </ChartCard>
+        )}
+
+        {/* Today-only: UV + Air quality */}
+        {dayIndex === 0 && (
+          <section className="px-5 mt-4">
+            <div className="grid grid-cols-2 gap-2">
+              <UvCard uvi={day.uvi ?? data!.current.uvi ?? 0} />
+              <AqiCard aqi={aqi?.aqi ?? null} />
+            </div>
+          </section>
         )}
 
         {/* Sun + Moon mini card */}
@@ -274,6 +329,7 @@ export function DayDetailModal({
               </div>
             </ChartCard>
 
+            {hasRain && (
             <ChartCard title="Rain">
               <div className="h-36 -mx-2">
                 <ResponsiveContainer width="100%" height="100%">
@@ -308,11 +364,12 @@ export function DayDetailModal({
                 Lighter bars = below 25% chance.
               </p>
             </ChartCard>
+            )}
 
-            <ChartCard title="Wind (km/h)">
-              <div className="h-36 -mx-2">
+            <ChartCard title={windTitle}>
+              <div className="h-44 -mx-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
+                  <BarChart data={chartData} margin={{ top: 28, right: 8, bottom: 0, left: 0 }}>
                     <XAxis
                       dataKey="hour"
                       axisLine={false}
@@ -323,11 +380,37 @@ export function DayDetailModal({
                     <YAxis hide domain={[0, "dataMax + 2"]} />
                     <Tooltip
                       contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }}
-                      formatter={(v: number) => [`${v} km/h`, "Wind"]}
+                      formatter={(v: number, _n, p) => {
+                        const deg = (p?.payload as { windDeg: number | null })?.windDeg;
+                        const dir = deg != null ? ` · ${cardinalFromDeg(deg)}` : "";
+                        return [`${v} km/h${dir}`, "Wind"];
+                      }}
                     />
-                    <Bar dataKey="wind" fill="var(--muted-foreground)" radius={[6, 6, 0, 0]} opacity={0.5} />
+                    <Bar dataKey="wind" radius={[6, 6, 0, 0]}>
+                      {chartData.map((d, i) => (
+                        <Cell key={i} fill={WIND_TIER_COLOR[windTier(d.wind)]} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+              {/* Direction row aligned under bars */}
+              <div className="grid grid-cols-12 -mt-2 px-1">
+                {chartData.map((d, i) => (
+                  <div key={i} className="flex flex-col items-center text-muted-foreground">
+                    {arrowFlags[i] && d.windDeg != null ? (
+                      <>
+                        <Navigation
+                          className="h-3 w-3"
+                          style={{ transform: `rotate(${d.windDeg}deg)` }}
+                        />
+                        <span className="text-[9px] leading-tight">{cardinalFromDeg(d.windDeg)}</span>
+                      </>
+                    ) : (
+                      <span className="h-3 w-3" />
+                    )}
+                  </div>
+                ))}
               </div>
             </ChartCard>
           </>
