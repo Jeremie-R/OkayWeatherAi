@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchOneCall, reverseGeocode } from "@/lib/owm";
 import { fetchOpenMeteoHourly } from "@/lib/openmeteo";
+import { fetchAirQuality } from "@/lib/airquality";
 import { getLast, setLast, saveRecent, type SavedLocation } from "@/lib/geo";
 import { Header } from "@/components/Header";
 import { LocationSheet } from "@/components/LocationSheet";
@@ -67,14 +68,18 @@ function Index() {
   const query = useQuery({
     queryKey: ["weather", location.lat, location.lon],
     queryFn: async () => {
-      const [owm, om] = await Promise.all([
+      const [owm, om, aqi] = await Promise.all([
         fetchOneCall(location.lat, location.lon),
         fetchOpenMeteoHourly(location.lat, location.lon).catch((e) => {
           console.warn("Open-Meteo fetch failed", e);
           return null;
         }),
+        fetchAirQuality(location.lat, location.lon).catch((e) => {
+          console.warn("Air quality fetch failed", e);
+          return null;
+        }),
       ]);
-      return { owm, om };
+      return { owm, om, aqi };
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -112,6 +117,7 @@ function Index() {
         <DayDetailModal
           data={query.data?.owm ?? null}
           omHourly={query.data?.om?.hourly ?? null}
+          aqi={query.data?.aqi ?? null}
           dayIndex={openDay}
           onClose={() => setOpenDay(null)}
         />

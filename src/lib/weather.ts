@@ -5,6 +5,53 @@ export function windLabel(kmh: number): "Calm" | "Breezy" | "Windy" | "Storm" {
   return "Storm";
 }
 
+export type WindTier = "calm" | "breezy" | "windy" | "storm";
+
+export function windTier(kmh: number): WindTier {
+  if (kmh < 10) return "calm";
+  if (kmh < 25) return "breezy";
+  if (kmh < 50) return "windy";
+  return "storm";
+}
+
+export const WIND_TIER_COLOR: Record<WindTier, string> = {
+  calm: "var(--wind-calm)",
+  breezy: "var(--wind-breezy)",
+  windy: "var(--wind-windy)",
+  storm: "var(--wind-storm)",
+};
+
+export function windTierTitle(tier: WindTier): string {
+  if (tier === "storm") return "Stormy day";
+  if (tier === "windy") return "Windy day";
+  if (tier === "breezy") return "Breezy day";
+  return "Calm day";
+}
+
+const CARDINALS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
+export function cardinalFromDeg(deg: number): string {
+  const i = Math.round(((deg % 360) + 360) % 360 / 45) % 8;
+  return CARDINALS[i];
+}
+
+/** Average a list of compass degrees using vector mean (handles 350°/10° wrap). */
+export function averageDegrees(degs: number[]): number {
+  if (!degs.length) return 0;
+  let x = 0, y = 0;
+  for (const d of degs) {
+    const r = (d * Math.PI) / 180;
+    x += Math.cos(r);
+    y += Math.sin(r);
+  }
+  const r = Math.atan2(y / degs.length, x / degs.length);
+  return ((r * 180) / Math.PI + 360) % 360;
+}
+
+export function degDelta(a: number, b: number): number {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
 // OWM returns wind_speed in m/s when units=metric
 export const msToKmh = (ms: number) => ms * 3.6;
 

@@ -12,6 +12,7 @@ export interface OwmCurrent {
   feels_like: number;
   humidity: number;
   wind_speed: number;
+  uvi?: number;
   weather: { id: number; main: string; description: string; icon: string }[];
 }
 
@@ -37,6 +38,7 @@ export interface OwmDaily {
   wind_speed: number;
   rain?: number;
   snow?: number;
+  uvi?: number;
   weather: { id: number; main: string; description: string; icon: string }[];
 }
 
