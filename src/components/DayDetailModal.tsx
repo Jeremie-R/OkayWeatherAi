@@ -438,3 +438,76 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     </section>
   );
 }
+
+function TierPill({
+  segments,
+  activeIndex,
+  color,
+}: {
+  segments: number;
+  activeIndex: number;
+  color: string;
+}) {
+  return (
+    <div className="mt-3 flex gap-1">
+      {Array.from({ length: segments }).map((_, i) => (
+        <div
+          key={i}
+          className="h-1.5 flex-1 rounded-full"
+          style={{
+            background: i === activeIndex ? color : "var(--muted)",
+            opacity: i === activeIndex ? 1 : 0.6,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function UvCard({ uvi }: { uvi: number }) {
+  const peak = Math.round(uvi);
+  const tier: UvTier = uvTier(peak);
+  const tiers: UvTier[] = ["low", "moderate", "high", "very-high", "extreme"];
+  const idx = tiers.indexOf(tier);
+  return (
+    <div className="rounded-3xl bg-card border border-border/60 p-4 shadow-sm">
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <Sun className="h-3.5 w-3.5" /> UV
+      </div>
+      <div className="mt-1 text-2xl font-semibold" style={{ color: UV_TIER_COLOR[tier] }}>
+        {UV_TIER_LABEL[tier]}
+      </div>
+      <div className="text-xs text-muted-foreground">peak {peak}</div>
+      <TierPill segments={tiers.length} activeIndex={idx} color={UV_TIER_COLOR[tier]} />
+    </div>
+  );
+}
+
+function AqiCard({ aqi }: { aqi: number | null }) {
+  if (aqi == null) {
+    return (
+      <div className="rounded-3xl bg-card border border-border/60 p-4 shadow-sm">
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <WindIcon className="h-3.5 w-3.5" /> Air quality
+        </div>
+        <div className="mt-1 text-2xl font-semibold text-muted-foreground">—</div>
+        <div className="text-xs text-muted-foreground">Unavailable</div>
+      </div>
+    );
+  }
+  const tier: AqiTier = aqiTier(aqi);
+  const tiers: AqiTier[] = ["good", "fair", "passable", "poor", "hazardous"];
+  const idx = tiers.indexOf(tier);
+  return (
+    <div className="rounded-3xl bg-card border border-border/60 p-4 shadow-sm">
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <WindIcon className="h-3.5 w-3.5" /> Air quality
+      </div>
+      <div className="mt-1 text-2xl font-semibold" style={{ color: AQI_TIER_COLOR[tier] }}>
+        {AQI_TIER_LABEL[tier]}
+      </div>
+      <div className="text-xs text-muted-foreground">EAQI {Math.round(aqi)}</div>
+      <TierPill segments={tiers.length} activeIndex={idx} color={AQI_TIER_COLOR[tier]} />
+    </div>
+  );
+}
