@@ -28,7 +28,6 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
     windKmh,
     hour: localHour(current.dt, timezone_offset),
   });
-  const today = new Date((current.dt + timezone_offset) * 1000).toISOString().slice(0, 10);
   const quote = pickQuote(ctx);
 
   const slice = hourly.slice(0, 8);
