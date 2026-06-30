@@ -1,3 +1,5 @@
 ## made with lovable
 
-[Visit app](https://okayweatherai-roberrini.lovable.app)
+[[](./weatherAIdemo.png)](https://weather.app.roberrini.com/)
+
+* Made with lovable *
