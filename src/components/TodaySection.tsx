@@ -13,6 +13,9 @@ import { WindChip } from "./WindChip";
 import type { OneCallResponse } from "@/lib/owm";
 import { buildCtx, pickQuote } from "@/lib/quotes";
 import { localHour, msToKmh } from "@/lib/weather";
+import { buildUpcomingRain } from "@/lib/upcomingRain";
+import { UpcomingRainChart } from "./UpcomingRainSection";
+import { SunArc } from "./SunMoonSection";
 
 export function TodaySection({ data, locName, onOpenDay }: { data: OneCallResponse; locName: string; onOpenDay?: () => void }) {
   const { current, hourly, timezone_offset } = data;
@@ -25,7 +28,6 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
     windKmh,
     hour: localHour(current.dt, timezone_offset),
   });
-  const today = new Date((current.dt + timezone_offset) * 1000).toISOString().slice(0, 10);
   const quote = pickQuote(ctx);
 
   const slice = hourly.slice(0, 8);
@@ -41,6 +43,15 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
     label: i === minIdx ? `${tMin}°` : i === maxIdx ? `${tMax}°` : "",
   }));
   const hasRain = chartData.some((d) => d.rain > 0);
+
+  // Icon row: show first, last, and any change vs. previous
+  const iconCodes = slice.map((h) => h.weather[0].icon);
+  const shownIcons = iconCodes.map((code, i) => {
+    if (i === 0 || i === iconCodes.length - 1) return code;
+    return code !== iconCodes[i - 1] ? code : "";
+  });
+
+  const upcoming = buildUpcomingRain(data.minutely, current.dt);
 
   return (
     <section className="px-5">
@@ -123,6 +134,44 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
               </Line>
             </ComposedChart>
           </ResponsiveContainer>
+        </div>
+        {/* Icon row aligned under the 8 columns */}
+        <div className="grid grid-cols-8 px-1 -mt-1">
+          {shownIcons.map((code, i) => (
+            <div key={i} className="flex justify-center">
+              {code ? <WeatherIcon code={code} size={20} /> : <span className="h-[20px]" />}
+            </div>
+          ))}
+        </div>
+
+        {upcoming.hasRain && (
+          <>
+            <div className="mt-5 border-t border-border/60" />
+            <div className="mt-4">
+              <div className="flex items-baseline justify-between">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Upcoming rain
+                </p>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  peak {upcoming.peakMm.toFixed(upcoming.peakMm >= 1 ? 1 : 2)} mm/h
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-foreground/80">{upcoming.summary}</p>
+              <div className="mt-2 -mx-2 h-24">
+                <UpcomingRainChart points={upcoming.points} />
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="mt-5 border-t border-border/60" />
+        <div className="mt-4">
+          <SunArc
+            sunrise={current.sunrise}
+            sunset={current.sunset}
+            currentDt={current.dt}
+            tzOffset={timezone_offset}
+          />
         </div>
       </button>
     </section>
