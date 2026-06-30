@@ -1,5 +1,5 @@
-## made with lovable
+## Simple weather app
 
-[[](./weatherAIdemo.png)](https://weather.app.roberrini.com/)
+[![demo image](./weatherAIdemo.png)](https://weather.app.roberrini.com/)
 
 * Made with lovable *
