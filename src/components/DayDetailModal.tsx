@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowLeft, Sunrise, Sunset, Navigation, Sun, Wind as WindIcon } from "lucide-react";
+import { ArrowLeft, Navigation, Sun, Wind as WindIcon } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -13,14 +13,12 @@ import {
   Cell,
 } from "recharts";
 import { WeatherIcon } from "./WeatherIcon";
+import { SunMoonCard } from "./SunMoonSection";
 import type { OneCallResponse } from "@/lib/owm";
 import type { OmHourly } from "@/lib/openmeteo";
 import {
   localDayLabel,
   msToKmh,
-  moonEmoji,
-  moonPhaseName,
-  formatTime,
   windTier,
   windTierTitle,
   WIND_TIER_COLOR,
@@ -221,23 +219,16 @@ export function DayDetailModal({
           </ChartCard>
         )}
 
-        {/* Sun + Moon mini card */}
+        {/* Sun + Moon full card */}
         <section className="px-5 mt-4">
-          <div className="rounded-3xl bg-card border border-border/60 p-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-sm">
-              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                <Sunrise className="h-4 w-4" />
-                {formatTime(day.sunrise, tz)}
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                <Sunset className="h-4 w-4" />
-                {formatTime(day.sunset, tz)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl leading-none">{moonEmoji(day.moon_phase)}</span>
-              <span className="text-xs text-muted-foreground">{moonPhaseName(day.moon_phase)}</span>
-            </div>
+          <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
+            <SunMoonCard
+              sunrise={day.sunrise}
+              sunset={day.sunset}
+              currentDt={dayIndex === 0 ? data!.current.dt : null}
+              tzOffset={tz}
+              moonPhase={day.moon_phase}
+            />
           </div>
         </section>
 
