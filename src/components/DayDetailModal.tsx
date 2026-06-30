@@ -219,19 +219,6 @@ export function DayDetailModal({
           </ChartCard>
         )}
 
-        {/* Sun + Moon full card */}
-        <section className="px-5 mt-4">
-          <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
-            <SunMoonCard
-              sunrise={day.sunrise}
-              sunset={day.sunset}
-              currentDt={dayIndex === 0 ? data!.current.dt : null}
-              tzOffset={tz}
-              moonPhase={day.moon_phase}
-            />
-          </div>
-        </section>
-
         {/* Parts of day */}
         <section className="px-5 mt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -412,6 +399,19 @@ export function DayDetailModal({
             </div>
           </section>
         )}
+
+        {/* Sun + Moon full card (end of page) */}
+        <section className="px-5 mt-4">
+          <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
+            <SunMoonCard
+              sunrise={day.sunrise}
+              sunset={day.sunset}
+              currentDt={dayIndex === 0 ? data!.current.dt : null}
+              tzOffset={tz}
+              moonPhase={day.moon_phase}
+            />
+          </div>
+        </section>
       </div>
     </div>
   );
