@@ -115,8 +115,10 @@ function Index() {
           omHourly={query.data?.om?.hourly ?? null}
           aqi={query.data?.aqi ?? null}
           dayIndex={openDay}
+          onChangeDay={(i) => setOpenDay(i)}
           onClose={() => setOpenDay(null)}
         />
+
         <AlertDetailModal
           alerts={query.data?.owm.alerts ?? null}
           open={alertsOpen}
