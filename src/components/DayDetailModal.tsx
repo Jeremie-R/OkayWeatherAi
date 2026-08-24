@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Navigation, Sun, Wind as WindIcon } from "lucide-react";
 import {
   BarChart,
