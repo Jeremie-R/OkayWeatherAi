@@ -79,25 +79,85 @@ export function DayDetailModal({
   aqi,
   dayIndex,
   onClose,
+  onChangeDay,
 }: {
   data: OneCallResponse | null;
   omHourly: OmHourly[] | null;
   aqi: AirQuality | null;
   dayIndex: number | null;
   onClose: () => void;
+  onChangeDay?: (dayIndex: number) => void;
 }) {
   const open = data != null && dayIndex != null;
+  const [dragX, setDragX] = useState(0);
+  const touch = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const maxDay = (data?.daily.length ?? 1) - 1;
+
+  const goPrev = useCallback(() => {
+    if (dayIndex == null) return;
+    if (dayIndex <= 0) onClose();
+    else onChangeDay?.(dayIndex - 1);
+  }, [dayIndex, onChangeDay, onClose]);
+
+  const goNext = useCallback(() => {
+    if (dayIndex == null) return;
+    if (dayIndex < maxDay) onChangeDay?.(dayIndex + 1);
+  }, [dayIndex, maxDay, onChangeDay]);
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose]);
+  }, [open, onClose, goNext, goPrev]);
+
+  useEffect(() => {
+    setDragX(0);
+  }, [dayIndex]);
+
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touch.current = { x: t.clientX, y: t.clientY, active: false };
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    const s = touch.current;
+    if (!s) return;
+    const t = e.touches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (!s.active) {
+      if (Math.abs(dx) < 12) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.2) {
+        touch.current = null;
+        return;
+      }
+      s.active = true;
+    }
+    const atEnd = dx < 0 && dayIndex != null && dayIndex >= maxDay;
+    setDragX(atEnd ? dx * 0.2 : Math.max(-120, Math.min(120, dx * 0.6)));
+  }
+  function onTouchEnd() {
+    const s = touch.current;
+    touch.current = null;
+    if (s?.active) {
+      const dx = dragX;
+      setDragX(0);
+      if (dx <= -45) goNext();
+      else if (dx >= 45) goPrev();
+      return;
+    }
+    setDragX(0);
+  }
+
 
   if (!open) return null;
 
