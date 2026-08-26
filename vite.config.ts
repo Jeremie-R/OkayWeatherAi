@@ -18,8 +18,13 @@ export default defineConfig({
       VitePWA({
         registerType: "autoUpdate",
         injectRegister: null,
+        // Use our hand-written public/manifest.webmanifest. Without this the
+        // plugin generates a default manifest (package.json name, no icons)
+        // that overwrites ours in the build output.
+        manifest: false,
         filename: "sw.js",
         devOptions: { enabled: false },
+
         workbox: {
           globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest,woff2}"],
           navigateFallback: "/",
