@@ -282,9 +282,11 @@ export function DayDetailModal({
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
       style={{
-        transform: dragX ? `translateX(${dragX}px)` : undefined,
-        transition: dragX ? "none" : "transform 200ms ease-out",
+        transform: `translate3d(${dragX}px,0,0)`,
+        transition: animate ? "transform 240ms cubic-bezier(0.22,0.61,0.36,1)" : "none",
+        willChange: "transform",
       }}
+
     >
 
       <div className="mx-auto max-w-[480px] pb-12">
