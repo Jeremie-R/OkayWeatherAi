@@ -90,19 +90,55 @@ export function DayDetailModal({
 }) {
   const open = data != null && dayIndex != null;
   const [dragX, setDragX] = useState(0);
+  const [animate, setAnimate] = useState(false);
   const touch = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const busy = useRef(false);
   const maxDay = (data?.daily.length ?? 1) - 1;
+
+  const width = () => (typeof window !== "undefined" ? window.innerWidth : 400);
+
+  // Slide the page fully off-screen, swap the day, then slide the new day in.
+  const slideTo = useCallback(
+    (dir: -1 | 1, action: () => void, incoming = true) => {
+      if (busy.current) return;
+      busy.current = true;
+      const w = width();
+      setAnimate(true);
+      setDragX(dir * w);
+      window.setTimeout(() => {
+        action();
+        if (!incoming) {
+          busy.current = false;
+          setAnimate(false);
+          setDragX(0);
+          return;
+        }
+        setAnimate(false);
+        setDragX(-dir * w);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setAnimate(true);
+            setDragX(0);
+            window.setTimeout(() => {
+              busy.current = false;
+            }, 260);
+          });
+        });
+      }, 240);
+    },
+    [],
+  );
 
   const goPrev = useCallback(() => {
     if (dayIndex == null) return;
-    if (dayIndex <= 0) onClose();
-    else onChangeDay?.(dayIndex - 1);
-  }, [dayIndex, onChangeDay, onClose]);
+    if (dayIndex <= 0) slideTo(1, onClose, false);
+    else slideTo(1, () => onChangeDay?.(dayIndex - 1));
+  }, [dayIndex, onChangeDay, onClose, slideTo]);
 
   const goNext = useCallback(() => {
     if (dayIndex == null) return;
-    if (dayIndex < maxDay) onChangeDay?.(dayIndex + 1);
-  }, [dayIndex, maxDay, onChangeDay]);
+    if (dayIndex < maxDay) slideTo(-1, () => onChangeDay?.(dayIndex + 1));
+  }, [dayIndex, maxDay, onChangeDay, slideTo]);
 
   useEffect(() => {
     if (!open) return;
@@ -120,17 +156,14 @@ export function DayDetailModal({
     };
   }, [open, onClose, goNext, goPrev]);
 
-  useEffect(() => {
-    setDragX(0);
-  }, [dayIndex]);
-
   function onTouchStart(e: React.TouchEvent) {
+    if (busy.current) return;
     const t = e.touches[0];
     touch.current = { x: t.clientX, y: t.clientY, active: false };
   }
   function onTouchMove(e: React.TouchEvent) {
     const s = touch.current;
-    if (!s) return;
+    if (!s || busy.current) return;
     const t = e.touches[0];
     const dx = t.clientX - s.x;
     const dy = t.clientY - s.y;
@@ -141,22 +174,30 @@ export function DayDetailModal({
         return;
       }
       s.active = true;
+      setAnimate(false);
     }
     const atEnd = dx < 0 && dayIndex != null && dayIndex >= maxDay;
-    setDragX(atEnd ? dx * 0.2 : Math.max(-120, Math.min(120, dx * 0.6)));
+    setDragX(atEnd ? dx * 0.2 : dx);
   }
   function onTouchEnd() {
     const s = touch.current;
     touch.current = null;
     if (s?.active) {
       const dx = dragX;
-      setDragX(0);
-      if (dx <= -45) goNext();
-      else if (dx >= 45) goPrev();
-      return;
+      const threshold = Math.min(80, width() * 0.18);
+      if (dx <= -threshold) {
+        goNext();
+        return;
+      }
+      if (dx >= threshold) {
+        goPrev();
+        return;
+      }
     }
+    setAnimate(true);
     setDragX(0);
   }
+
 
 
   if (!open) return null;
