@@ -138,7 +138,12 @@ export function DayDetailModal({
   const goNext = useCallback(() => {
     if (dayIndex == null) return;
     if (dayIndex < maxDay) slideTo(-1, () => onChangeDay?.(dayIndex + 1));
+    else {
+      setAnimate(true);
+      setDragX(0);
+    }
   }, [dayIndex, maxDay, onChangeDay, slideTo]);
+
 
   useEffect(() => {
     if (!open) return;
