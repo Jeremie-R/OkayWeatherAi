@@ -7,6 +7,8 @@
 
     <!-- Home-screen widget (Jetpack Glance) -->
     <string name="widget_label">Okay Weather</string>
-    <string name="widget_description">Current temperature and conditions at a glance.</string>
-    <string name="widget_placeholder">Weather widget — coming soon</string>
+    <string name="widget_description">Current temperature at a glance — turns into a rain card when rain is due within the hour.</string>
+    <string name="widget_temp_placeholder">–</string>
+    <string name="widget_no_data">Weather not loaded yet</string>
+    <string name="widget_rain_summary">Rain: %1$s</string>
 </resources>

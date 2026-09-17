@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget's capsule, rotated 45° so it runs bottom-left -> top-right.
+  Geometry (viewport 100x100): two r=30 circles centred at (36,64) and
+  (64,36) joined by a band — i.e. a horizontal capsule from x=0.2..99.8,
+  y=20..80 turned -45° about the centre. Drawn white and tinted at runtime
+  with GlanceTheme.colors.primaryContainer, so it follows Material You and
+  day/night. Shown with ContentScale.Fit, so it stays square in any cell.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <group
+        android:rotation="-45"
+        android:pivotX="50"
+        android:pivotY="50">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M30.2,20 L69.8,20 A30,30 0 0 1 69.8,80 L30.2,80 A30,30 0 0 1 30.2,20 Z" />
+    </group>
+</vector>

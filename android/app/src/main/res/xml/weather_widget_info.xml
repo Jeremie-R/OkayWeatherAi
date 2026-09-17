@@ -3,26 +3,23 @@
   Okay Weather home-screen widget metadata (referenced from the
   WeatherWidgetReceiver <meta-data> entry in AndroidManifest.xml).
 
-  Sized as a pill: 3 cells wide x 1 cell tall by default, resizable
-  horizontally only. Cell math: n cells = 70dp * n - 30dp.
+  Fixed 2x2: the 45° pill needs a square-ish cell and the rain card is laid
+  out for it. Cell math: n cells = 70dp * n - 30dp, so 2 cells = 110dp.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
-    android:minWidth="180dp"
-    android:minHeight="40dp"
-    android:minResizeWidth="110dp"
-    android:minResizeHeight="40dp"
-    android:maxResizeHeight="40dp"
-    android:targetCellWidth="3"
-    android:targetCellHeight="1"
-    android:resizeMode="horizontal"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="none"
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="0"
+    android:previewImage="@drawable/widget_preview"
     android:initialLayout="@layout/glance_default_loading_layout" />
 <!--
-  updatePeriodMillis is 0 on purpose: the OS minimum is 30 min and it fires
-  even when the device is idle. Refresh will instead come from a WorkManager
-  PeriodicWorkRequest (see WORK.md). Add android:previewLayout /
-  android:previewImage once the pill design is final so the widget picker
-  shows a real preview instead of the app icon.
+  updatePeriodMillis is 0 on purpose: refreshes come from WorkManager
+  (weather/WeatherRefresh.kt) — every 30 min, plus 10-min follow-ups while
+  rain is expected. previewImage is a masked screenshot of the real render
+  (res/drawable-nodpi/widget_preview.png) so the picker shows the pill.
 -->

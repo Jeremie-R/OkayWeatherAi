@@ -15,4 +15,5 @@ ext {
     cordovaAndroidVersion = '14.0.1'
     // Home-screen widget (Jetpack Glance). Not part of the Capacitor template.
     glanceVersion = '1.2.0'
+    workVersion = '2.11.2'
 }

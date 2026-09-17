@@ -50,6 +50,8 @@ dependencies {
 
     // Home-screen widget (see src/main/java/com/roberrini/okayweather/widget).
     implementation "androidx.glance:glance-appwidget:$glanceVersion"
+    // Periodic weather refresh for the widget (CoroutineWorker).
+    implementation "androidx.work:work-runtime-ktx:$workVersion"
 }
 
 apply from: 'capacitor.build.gradle'

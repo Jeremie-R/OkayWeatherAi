@@ -57,4 +57,12 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+      Location is optional. Declaring it lets the WebView's
+      navigator.geolocation prompt actually ask (Capacitor forwards it to
+      these permissions), and once granted the widget fetches weather for the
+      device's last known position instead of the app's default city.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 </manifest>
