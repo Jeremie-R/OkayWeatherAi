@@ -16,6 +16,8 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -52,27 +54,39 @@ class WeatherWidget : GlanceAppWidget() {
     }
 }
 
+/** Capsule height. Launcher rows are taller than this (≈130dp on a Pixel), so
+ *  the pill floats centered in a transparent cell instead of filling it. */
+private val PillHeight = 56.dp
+
 @Composable
 private fun WeatherPill() {
     val context = LocalContext.current
+    // Outer box = the launcher cell (transparent). Inner box = the pill, with a
+    // fixed height so it stays a capsule whatever cell height the launcher gives.
     Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(GlanceTheme.colors.primaryContainer)
-            // Capsule: radius >= half the widget's single-cell height.
-            // No-op below Android 12 (RemoteViews can't clip there).
-            .cornerRadius(28.dp)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = GlanceModifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = context.getString(R.string.widget_placeholder),
-            style = TextStyle(
-                color = GlanceTheme.colors.onPrimaryContainer,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-            ),
-            maxLines = 1,
-        )
+        Box(
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .height(PillHeight)
+                .background(GlanceTheme.colors.primaryContainer)
+                // Half the height = full capsule. No-op below Android 12
+                // (RemoteViews can't clip there), where it's a plain rect.
+                .cornerRadius(PillHeight / 2)
+                .padding(horizontal = 20.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = context.getString(R.string.widget_placeholder),
+                style = TextStyle(
+                    color = GlanceTheme.colors.onPrimaryContainer,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+                maxLines = 1,
+            )
+        }
     }
 }
