@@ -13,4 +13,6 @@ ext {
     androidxJunitVersion = '1.3.0'
     androidxEspressoCoreVersion = '3.7.0'
     cordovaAndroidVersion = '14.0.1'
+    // Home-screen widget (Jetpack Glance). Not part of the Capacitor template.
+    glanceVersion = '1.2.0'
 }

@@ -1,4 +1,8 @@
 apply plugin: 'com.android.application'
+// Jetpack Glance widgets are @Composable, so the Kotlin Compose compiler is
+// required. AGP 9 compiles Kotlin itself (built-in Kotlin); this plugin only
+// adds the compiler plugin. Version pinned in the root build.gradle classpath.
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
     namespace = "com.roberrini.okayweather"
@@ -15,6 +19,9 @@ android {
         // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
         // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
         ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
+    buildFeatures {
+        compose = true
     }
     buildTypes {
         release {
@@ -40,6 +47,9 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Home-screen widget (see src/main/java/com/roberrini/okayweather/widget).
+    implementation "androidx.glance:glance-appwidget:$glanceVersion"
 }
 
 apply from: 'capacitor.build.gradle'

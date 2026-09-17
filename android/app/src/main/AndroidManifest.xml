@@ -33,6 +33,25 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!--
+          Home-screen widget (Jetpack Glance). The receiver is the
+          AppWidgetProvider the launcher talks to; the XML meta-data describes
+          size, resizing and preview. Kotlin sources live in
+          java/com/roberrini/okayweather/widget/. exported="true" is required
+          for launchers to bind the widget on Android 12+.
+        -->
+        <receiver
+            android:name=".widget.WeatherWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/weather_widget_info" />
+        </receiver>
     </application>
 
     <!-- Permissions -->

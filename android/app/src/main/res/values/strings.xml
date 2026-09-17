@@ -4,4 +4,9 @@
     <string name="title_activity_main">Okay Weather</string>
     <string name="package_name">com.roberrini.okayweather</string>
     <string name="custom_url_scheme">com.roberrini.okayweather</string>
+
+    <!-- Home-screen widget (Jetpack Glance) -->
+    <string name="widget_label">Okay Weather</string>
+    <string name="widget_description">Current temperature and conditions at a glance.</string>
+    <string name="widget_placeholder">Weather widget — coming soon</string>
 </resources>

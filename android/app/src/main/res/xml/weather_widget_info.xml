@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Okay Weather home-screen widget metadata (referenced from the
+  WeatherWidgetReceiver <meta-data> entry in AndroidManifest.xml).
+
+  Sized as a pill: 3 cells wide x 1 cell tall by default, resizable
+  horizontally only. Cell math: n cells = 70dp * n - 30dp.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:minWidth="180dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:maxResizeHeight="40dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="1"
+    android:resizeMode="horizontal"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/glance_default_loading_layout" />
+<!--
+  updatePeriodMillis is 0 on purpose: the OS minimum is 30 min and it fires
+  even when the device is idle. Refresh will instead come from a WorkManager
+  PeriodicWorkRequest (see WORK.md). Add android:previewLayout /
+  android:previewImage once the pill design is final so the widget picker
+  shows a real preview instead of the app icon.
+-->
