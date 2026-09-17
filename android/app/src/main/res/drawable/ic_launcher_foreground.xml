@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Launcher icon foreground: the Okay Weather glyph from the brand SVG
+  (512-unit path, untouched) scaled onto the 108dp adaptive-icon canvas so
+  it sits inside the 66dp safe zone with the same proportions as
+  public/icon-maskable-512.png. Also reused as the <monochrome> layer for
+  themed icons (Android 13+), which tints it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.12717"
+        android:scaleY="0.12717"
+        android:translateX="21.4451"
+        android:translateY="21.4451">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M226.993,222.848C211.525,228.312 194.879,231.286 177.539,231.286C150.223,231.286 125.493,242.353 107.594,260.246C95.1727,272.663 101.798,292.292 117.511,300.144C126.231,304.502 136.688,300.632 143.818,293.986C152.652,285.752 164.507,280.714 177.539,280.714C204.851,280.714 226.993,302.844 226.993,330.143C226.993,357.441 204.851,379.571 177.539,379.571C163.464,379.571 150.763,373.695 141.757,364.263C135.024,357.211 124.807,352.73 115.843,356.57C99.6972,363.486 91.9297,382.689 103.603,395.809C121.72,416.172 148.13,429 177.539,429C232.164,429 276.447,384.74 276.447,330.143C276.447,325.961 276.187,321.839 275.683,317.793C300.65,339.822 318.142,370.119 323.868,404.396C326.118,417.859 336.972,429 350.628,429C364.285,429 375.518,417.887 373.832,404.342C365.874,340.406 327.373,285.945 273.381,256C327.373,226.055 365.874,171.594 373.832,107.658C375.518,94.1129 364.285,83 350.628,83C336.972,83 326.118,94.141 323.868,107.604C318.2,141.531 301.007,171.558 276.447,193.528V107.714C276.447,94.065 265.376,83 251.72,83C238.064,83 226.993,94.065 226.993,107.714V222.848Z" />
+    </group>
+</vector>
