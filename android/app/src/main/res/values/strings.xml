@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Okay Weather</string>
+    <string name="title_activity_main">Okay Weather</string>
+    <string name="package_name">com.roberrini.okayweather</string>
+    <string name="custom_url_scheme">com.roberrini.okayweather</string>
+
+    <!-- Home-screen widget (Jetpack Glance) -->
+    <string name="widget_label">Okay Weather</string>
+    <string name="widget_description">Current temperature at a glance — turns into a rain card when rain is due within the hour.</string>
+    <string name="widget_temp_placeholder">–</string>
+    <string name="widget_no_data">Weather not loaded yet</string>
+    <string name="widget_rain_summary">Rain: %1$s</string>
+</resources>

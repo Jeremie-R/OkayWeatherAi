@@ -30,3 +30,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android / Capacitor
+# android/ carries its own .gitignore (Gradle, IDE, copied web assets); these
+# root-level entries are belt-and-braces so build output never gets staged.
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/.idea/
+android/local.properties
+*.apk
+*.aab

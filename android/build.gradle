@@ -1,0 +1,53 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+//
+// Toolchain note (differs from the stock Capacitor 8 template, which pins
+// AGP 8.13 / Gradle 8.14): this machine builds with Android Studio's bundled
+// JDK 25, which needs Gradle >= 9.1, which needs AGP >= 9.0. We track the
+// AGP line Android Studio 2026.1 bundles (9.2.x). If you upgrade Studio,
+// bump AGP here to whatever the new Studio bundles.
+
+buildscript {
+    
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:9.2.1'
+        classpath 'com.google.gms:google-services:4.4.4'
+        // Compose compiler for the Jetpack Glance widget (app/build.gradle).
+        // Version must match the Kotlin Gradle plugin AGP bundles (AGP 9.2 -> KGP 2.2.10).
+        classpath 'org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+apply from: "variables.gradle"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    // :capacitor-android (built from node_modules/@capacitor/android) and
+    // :capacitor-cordova-android-plugins each declare their own
+    // `buildscript { classpath 'com.android.tools.build:gradle:8.13.0' }`.
+    // Gradle would resolve (download) that AGP even though the root's 9.2.1
+    // classes are what actually load. Pin them to the root version so the
+    // build stays on one AGP and doesn't fetch a second one.
+    buildscript {
+        configurations.classpath.resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'com.android.tools.build' && details.requested.name == 'gradle') {
+                details.useVersion '9.2.1'
+                details.because 'single AGP for the whole build (see root build.gradle)'
+            }
+        }
+    }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
+}

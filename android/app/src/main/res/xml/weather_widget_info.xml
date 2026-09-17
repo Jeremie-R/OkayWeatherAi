@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Okay Weather home-screen widget metadata (referenced from the
+  WeatherWidgetReceiver <meta-data> entry in AndroidManifest.xml).
+
+  Fixed 2x2: the 45° pill needs a square-ish cell and the rain card is laid
+  out for it. Cell math: n cells = 70dp * n - 30dp, so 2 cells = 110dp.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="0"
+    android:previewImage="@drawable/widget_preview"
+    android:initialLayout="@layout/glance_default_loading_layout" />
+<!--
+  updatePeriodMillis is 0 on purpose: refreshes come from WorkManager
+  (weather/WeatherRefresh.kt) — every 30 min, plus 10-min follow-ups while
+  rain is expected. previewImage is a masked screenshot of the real render
+  (res/drawable-nodpi/widget_preview.png) so the picker shows the pill.
+-->
