@@ -10,6 +10,10 @@ import android.content.Context
 object WidgetSettings {
     private const val PREFS = "okayweather.widget"
     private const val KEY_INTERVAL = "refreshIntervalMinutes"
+    private const val KEY_USE_DEVICE = "useDeviceLocation"
+    private const val KEY_PLACE_NAME = "placeName"
+    private const val KEY_LAT = "placeLat"
+    private const val KEY_LON = "placeLon"
 
     /** Keep in sync with the Settings screen's options. */
     val INTERVAL_CHOICES = listOf(15L, 30L, 60L, 180L)
@@ -25,7 +29,44 @@ object WidgetSettings {
     }
 
     fun setRefreshIntervalMinutes(context: Context, minutes: Long) {
-        prefs(context).edit().putLong(KEY_INTERVAL, minutes).apply()
+        val safe = if (minutes in INTERVAL_CHOICES) minutes else DEFAULT_INTERVAL_MINUTES
+        prefs(context).edit().putLong(KEY_INTERVAL, safe).apply()
+    }
+
+    /**
+     * Whether the widget follows the device's location. False means a place
+     * was pinned in Settings — see [place].
+     */
+    fun useDeviceLocation(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_USE_DEVICE, true)
+
+    fun useDeviceLocation(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean(KEY_USE_DEVICE, value).apply()
+    }
+
+    /** The pinned place, or null when following the device. */
+    fun place(context: Context): Triple<Double, Double, String>? {
+        val p = prefs(context)
+        if (p.getBoolean(KEY_USE_DEVICE, true)) return null
+        val name = p.getString(KEY_PLACE_NAME, null) ?: return null
+        if (!p.contains(KEY_LAT) || !p.contains(KEY_LON)) return null
+        return Triple(
+            java.lang.Double.longBitsToDouble(p.getLong(KEY_LAT, 0L)),
+            java.lang.Double.longBitsToDouble(p.getLong(KEY_LON, 0L)),
+            name,
+        )
+    }
+
+    fun placeName(context: Context): String? = place(context)?.third
+
+    fun setPlace(context: Context, lat: Double, lon: Double, name: String) {
+        prefs(context).edit()
+            .putBoolean(KEY_USE_DEVICE, false)
+            .putString(KEY_PLACE_NAME, name)
+            // SharedPreferences has no putDouble; the raw bits round-trip exactly.
+            .putLong(KEY_LAT, java.lang.Double.doubleToRawLongBits(lat))
+            .putLong(KEY_LON, java.lang.Double.doubleToRawLongBits(lon))
+            .apply()
     }
 
     private fun prefs(context: Context) =

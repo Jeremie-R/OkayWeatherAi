@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { useSettings } from "@/hooks/use-settings";
+import { getLast } from "@/lib/geo";
+import { getWidgetConfig, isNative, setWidgetConfig, type WidgetConfig } from "@/lib/native";
 import type { IconPack, Settings } from "@/lib/settings";
 
 export const Route = createFileRoute("/_tabs/settings")({
@@ -24,6 +26,20 @@ const ICON_PACK_LABELS: Record<IconPack, string> = {
 
 function SettingsPage() {
   const { settings, set } = useSettings();
+  // Resolved in an effect so the server render and the first client render
+  // agree — Capacitor only exists in the Android shell.
+  const [native, setNative] = useState(false);
+  const [widget, setWidget] = useState<WidgetConfig | null>(null);
+
+  useEffect(() => {
+    setNative(isNative());
+    void getWidgetConfig().then(setWidget);
+  }, []);
+
+  async function updateWidget(update: Parameters<typeof setWidgetConfig>[0]) {
+    const ok = await setWidgetConfig(update);
+    if (ok) setWidget(await getWidgetConfig());
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,6 +71,21 @@ function SettingsPage() {
                 ]}
               />
             </Row>
+            {native && (
+              <Row
+                label="Colours"
+                hint="Material You takes its palette from your wallpaper. Android 12 and later."
+              >
+                <Segmented
+                  value={settings.accent}
+                  onChange={(v) => set("accent", v)}
+                  options={[
+                    { value: "default", label: "Default" },
+                    { value: "materialYou", label: "Material You" },
+                  ]}
+                />
+              </Row>
+            )}
           </Section>
 
           <Section title="Icons">
@@ -118,6 +149,63 @@ function SettingsPage() {
               />
             </Row>
           </Section>
+
+          {native && widget && (
+            <Section title="Home-screen widget">
+              <Row
+                label="Refresh"
+                hint="How often the widget fetches new weather. Shorter is fresher but uses a little more battery."
+              >
+                <Segmented
+                  value={String(widget.refreshIntervalMinutes)}
+                  onChange={(v) => void updateWidget({ refreshIntervalMinutes: Number(v) })}
+                  options={[
+                    { value: "15", label: "15 min" },
+                    { value: "30", label: "30 min" },
+                    { value: "60", label: "1 h" },
+                    { value: "180", label: "3 h" },
+                  ]}
+                />
+              </Row>
+              <Row
+                label="Location"
+                hint={
+                  widget.useDeviceLocation
+                    ? "Following this device's location."
+                    : `Pinned to ${widget.placeName ?? "a saved place"}.`
+                }
+              >
+                <Segmented
+                  value={widget.useDeviceLocation ? "device" : "pinned"}
+                  onChange={(v) => {
+                    if (v === "device") {
+                      void updateWidget({ useDeviceLocation: true });
+                      return;
+                    }
+                    const last = getLast();
+                    if (last) {
+                      void updateWidget({
+                        useDeviceLocation: false,
+                        lat: last.lat,
+                        lon: last.lon,
+                        placeName: last.name,
+                      });
+                    }
+                  }}
+                  options={[
+                    { value: "device", label: "This device" },
+                    { value: "pinned", label: "App's city" },
+                  ]}
+                />
+              </Row>
+              {!widget.hasWidget && (
+                <p className="text-[11px] text-muted-foreground">
+                  No widget placed yet — long-press your home screen, choose Widgets, then Okay
+                  Weather.
+                </p>
+              )}
+            </Section>
+          )}
 
           <p className="px-1 text-[10px] leading-relaxed text-muted-foreground">
             Forecast by OpenWeatherMap and Open-Meteo · Radar from RainViewer · Base map ©

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Share } from "lucide-react";
+import { isNative } from "@/lib/native";
 
 type Platform = "ios" | "android" | null;
 
@@ -24,6 +25,10 @@ function detectPlatform(): Platform {
 
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
+  // The Android shell is already an installed app, but its WebView doesn't
+  // report display-mode: standalone — so "add to home screen" would show
+  // there forever without this.
+  if (isNative()) return true;
   const mql = window.matchMedia?.("(display-mode: standalone)").matches;
   const iosStandalone =
     (window.navigator as unknown as { standalone?: boolean }).standalone === true;

@@ -11,9 +11,12 @@ import {
   applySettings,
   DEFAULT_SETTINGS,
   loadSettings,
+  resolveTheme,
   saveSettings,
   type Settings,
 } from "@/lib/settings";
+import { applyMaterialYou, clearMaterialYou } from "@/lib/materialyou";
+import { getMaterialYouPalette } from "@/lib/native";
 
 interface SettingsContextValue {
   settings: Settings;
@@ -43,6 +46,30 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     applySettings(settings);
     saveSettings(settings);
   }, [settings, hydrated]);
+
+  // Material You: ask the shell for the wallpaper palette and paint it onto
+  // the CSS variables. Re-runs on theme changes because light and dark map to
+  // different shades of the same palette.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (settings.accent !== "materialYou") {
+      clearMaterialYou();
+      return;
+    }
+    let cancelled = false;
+    void getMaterialYouPalette().then((palette) => {
+      if (cancelled) return;
+      if (palette.available && palette.colors) {
+        applyMaterialYou(palette.colors, resolveTheme(settings.theme), settings.surface);
+      } else {
+        // Web build, or Android below 12 — stay on the stock palette.
+        clearMaterialYou();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.accent, settings.theme, settings.surface, hydrated]);
 
   // Follow the OS while the theme is set to "system".
   useEffect(() => {

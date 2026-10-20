@@ -18,6 +18,9 @@ object WidgetLocation {
     val DEFAULT = LatLon(52.3676, 4.9041)
 
     fun resolve(context: Context): LatLon {
+        // A place pinned in Settings wins over the device's own position.
+        WidgetSettings.place(context)?.let { (lat, lon, _) -> return LatLon(lat, lon) }
+
         val granted = listOf(
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,

@@ -1,9 +1,19 @@
 package com.roberrini.okayweather;
 
+import android.os.Bundle;
+
 import com.getcapacitor.BridgeActivity;
+import com.roberrini.okayweather.plugin.OkayWeatherPlugin;
 import com.roberrini.okayweather.weather.WeatherRefresh;
 
 public class MainActivity extends BridgeActivity {
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        // Must be registered before super.onCreate() builds the bridge.
+        registerPlugin(OkayWeatherPlugin.class);
+        super.onCreate(savedInstanceState);
+    }
 
     @Override
     public void onResume() {
