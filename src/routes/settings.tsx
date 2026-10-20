@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { useSettings } from "@/hooks/use-settings";
@@ -6,7 +7,7 @@ import { getLast } from "@/lib/geo";
 import { getWidgetConfig, isNative, setWidgetConfig, type WidgetConfig } from "@/lib/native";
 import { MATERIAL_COLOR_PRESETS, WALLPAPER, type IconPack, type Settings } from "@/lib/settings";
 
-export const Route = createFileRoute("/_tabs/settings")({
+export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings — OkayWeather" },
@@ -45,7 +46,13 @@ function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[480px]">
-        <header className="px-5 pt-8 pb-4">
+        <header className="flex items-center gap-2 px-3 pt-6 pb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Link>
           <h1 className="text-base font-semibold tracking-tight">Settings</h1>
         </header>
 

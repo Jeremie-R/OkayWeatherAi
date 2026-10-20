@@ -222,6 +222,16 @@
   border-color: color-mix(in oklab, currentColor 12%, transparent);
 }
 
+/* Flat: Material You separates things with colour, not elevation, so drop
+   every shadow. Specificity beats the utility class, so no !important. */
+[data-style="material"] [class*="shadow"] {
+  box-shadow: none;
+}
+
+[data-style="material"] [class*="drop-shadow"] {
+  filter: none;
+}
+
 /* --- Frosted --------------------------------------------------------- */
 /* Glass only reads as glass when there is something behind it, so this also
    puts a soft brand gradient on the page and makes the page wrapper

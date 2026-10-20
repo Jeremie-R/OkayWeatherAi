@@ -33,8 +33,11 @@ export function AlertDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background app-sheet animate-in fade-in duration-150">
-      <div className="mx-auto max-w-[480px] pb-12">
-        <header className="sticky top-0 z-10 flex items-center gap-2 bg-background/90 backdrop-blur px-3 pt-4 pb-3 border-b border-border/60">
+      {/* Full-bleed bar: on a wide screen a header constrained to the
+          480px column reads as a floating strip rather than a page header,
+          and its bottom border stops short of the edges. */}
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-[480px] items-center gap-2 px-3 pt-4 pb-3">
           <button
             onClick={onClose}
             className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
@@ -44,8 +47,10 @@ export function AlertDetailModal({
           <div className="ml-auto mr-3 text-right">
             <p className="text-sm font-semibold">{title}</p>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <div className="mx-auto max-w-[480px] pb-12">
         {list.map((a, i) => (
           <div key={`${a.event}-${a.start}-${i}`}>
             <section className="px-5 pt-5">

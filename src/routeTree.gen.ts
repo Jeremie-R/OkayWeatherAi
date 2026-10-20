@@ -9,11 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TabsRouteImport } from './routes/_tabs'
 import { Route as TabsIndexRouteImport } from './routes/_tabs.index'
-import { Route as TabsSettingsRouteImport } from './routes/_tabs.settings'
 import { Route as TabsMapRouteImport } from './routes/_tabs.map'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TabsRoute = TabsRouteImport.update({
   id: '/_tabs',
   getParentRoute: () => rootRouteImport,
@@ -21,11 +26,6 @@ const TabsRoute = TabsRouteImport.update({
 const TabsIndexRoute = TabsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => TabsRoute,
-} as any)
-const TabsSettingsRoute = TabsSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
   getParentRoute: () => TabsRoute,
 } as any)
 const TabsMapRoute = TabsMapRouteImport.update({
@@ -36,35 +36,43 @@ const TabsMapRoute = TabsMapRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof TabsIndexRoute
+  '/settings': typeof SettingsRoute
   '/map': typeof TabsMapRoute
-  '/settings': typeof TabsSettingsRoute
 }
 export interface FileRoutesByTo {
+  '/settings': typeof SettingsRoute
   '/map': typeof TabsMapRoute
-  '/settings': typeof TabsSettingsRoute
   '/': typeof TabsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_tabs': typeof TabsRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/_tabs/map': typeof TabsMapRoute
-  '/_tabs/settings': typeof TabsSettingsRoute
   '/_tabs/': typeof TabsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/map' | '/settings'
+  fullPaths: '/' | '/settings' | '/map'
   fileRoutesByTo: FileRoutesByTo
-  to: '/map' | '/settings' | '/'
-  id: '__root__' | '/_tabs' | '/_tabs/map' | '/_tabs/settings' | '/_tabs/'
+  to: '/settings' | '/map' | '/'
+  id: '__root__' | '/_tabs' | '/settings' | '/_tabs/map' | '/_tabs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   TabsRoute: typeof TabsRouteWithChildren
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_tabs': {
       id: '/_tabs'
       path: ''
@@ -79,13 +87,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TabsIndexRouteImport
       parentRoute: typeof TabsRoute
     }
-    '/_tabs/settings': {
-      id: '/_tabs/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof TabsSettingsRouteImport
-      parentRoute: typeof TabsRoute
-    }
     '/_tabs/map': {
       id: '/_tabs/map'
       path: '/map'
@@ -98,13 +99,11 @@ declare module '@tanstack/react-router' {
 
 interface TabsRouteChildren {
   TabsMapRoute: typeof TabsMapRoute
-  TabsSettingsRoute: typeof TabsSettingsRoute
   TabsIndexRoute: typeof TabsIndexRoute
 }
 
 const TabsRouteChildren: TabsRouteChildren = {
   TabsMapRoute: TabsMapRoute,
-  TabsSettingsRoute: TabsSettingsRoute,
   TabsIndexRoute: TabsIndexRoute,
 }
 
@@ -112,6 +111,7 @@ const TabsRouteWithChildren = TabsRoute._addFileChildren(TabsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   TabsRoute: TabsRouteWithChildren,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

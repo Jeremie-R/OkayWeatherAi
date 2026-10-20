@@ -295,8 +295,11 @@ export function DayDetailModal({
         willChange: "transform",
       }}
     >
-      <div className="mx-auto max-w-[480px] pb-12">
-        <header className="sticky top-0 z-10 flex items-center gap-2 bg-background/90 backdrop-blur px-3 pt-4 pb-3 border-b border-border/60">
+      {/* Full-bleed bar: on a wide screen a header constrained to the
+          480px column reads as a floating strip rather than a page header,
+          and its bottom border stops short of the edges. */}
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/90 backdrop-blur">
+        <div className="mx-auto flex max-w-[480px] items-center gap-2 px-3 pt-4 pb-3">
           <button
             onClick={onClose}
             className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/60"
@@ -307,8 +310,10 @@ export function DayDetailModal({
             <p className="text-sm font-semibold">{label.short}</p>
             <p className="text-[11px] text-muted-foreground">{label.date}</p>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <div className="mx-auto max-w-[480px] pb-12">
         {/* Hero header */}
         <section className="px-5 pt-5">
           <div className="rounded-3xl bg-card border border-border/60 p-6 shadow-sm">
