@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import com.roberrini.okayweather.weather.WeatherAlarm
 import com.roberrini.okayweather.weather.WeatherRefresh
 
 /**
@@ -13,10 +14,11 @@ import com.roberrini.okayweather.weather.WeatherRefresh
 class WeatherWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = WeatherWidget()
 
-    /** First instance placed: start the 30-minute cycle and fetch right away. */
+    /** First instance placed: start the refresh cycle and fetch right away. */
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
         WeatherRefresh.schedule(context)
+        WeatherAlarm.arm(context)
         WeatherRefresh.refreshNow(context)
     }
 
@@ -26,10 +28,16 @@ class WeatherWidgetReceiver : GlanceAppWidgetReceiver() {
         WeatherRefresh.cancel(context)
     }
 
-    /** Also fires after reboot / launcher restarts — make sure the schedule survived. */
+    /**
+     * The OS delivers this on its own schedule (updatePeriodMillis in
+     * weather_widget_info.xml) and again after a reboot or a launcher
+     * restart. That makes it the self-healing hook: alarms don't survive a
+     * reboot, so this is where the heartbeat gets re-armed.
+     */
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         WeatherRefresh.schedule(context)
+        WeatherAlarm.arm(context)
         WeatherRefresh.refreshNow(context)
     }
 }

@@ -14,12 +14,21 @@
     android:targetCellHeight="2"
     android:resizeMode="none"
     android:widgetCategory="home_screen"
-    android:updatePeriodMillis="0"
+    android:updatePeriodMillis="1800000"
     android:previewImage="@drawable/widget_preview"
     android:initialLayout="@layout/glance_default_loading_layout" />
 <!--
-  updatePeriodMillis is 0 on purpose: refreshes come from WorkManager
-  (weather/WeatherRefresh.kt) — every 30 min, plus 10-min follow-ups while
-  rain is expected. previewImage is a masked screenshot of the real render
+  Refresh comes from three places, strongest first:
+    1. WeatherAlarm — setAndAllowWhileIdle, fires during Doze, interval from
+       Settings (default 15 min). This is what keeps the widget current.
+    2. updatePeriodMillis below — the OS's own 30-minute widget update (its
+       floor is 30 min). It costs nothing extra, is delivered after a reboot,
+       and is where the alarm gets re-armed, so the whole thing self-heals.
+    3. WorkManager periodic — survives if the alarm is dropped by an OEM
+       battery manager.
+  Plus a 10-minute follow-up while rain is expected, and an immediate refresh
+  whenever the app is opened.
+
+  previewImage is a masked screenshot of the real render
   (res/drawable-nodpi/widget_preview.png) so the picker shows the pill.
 -->

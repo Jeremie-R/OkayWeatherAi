@@ -39,6 +39,9 @@ class WeatherRefreshWorker(context: Context, params: WorkerParameters) :
 
         WeatherStore.save(applicationContext, snapshot)
         WeatherWidget.publish(applicationContext, snapshot)
+        // Push the next heartbeat out by a full interval so a refresh
+        // triggered from the app doesn't leave a tick due seconds later.
+        WeatherAlarm.arm(applicationContext)
 
         // Rain within the hour: "starts in ~12 min" goes stale fast, so follow
         // up well before the regular 30-minute cycle.
@@ -61,23 +64,31 @@ object WeatherRefresh {
     private const val NOW = "okayweather.refresh.now"
     private const val FOLLOW_UP = "okayweather.refresh.followup"
 
-    /** OpenWeatherMap's free tier is generous, but 30 min keeps it comfortable. */
-    private const val PERIOD_MINUTES = 30L
+    /** WorkManager's floor for periodic work. */
+    private const val MIN_PERIOD_MINUTES = 15L
 
     private val online = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
 
-    /** Idempotent: keeps an existing periodic job (and its timing) if one is queued. */
+    /**
+     * The backstop schedule, for when the alarm in [WeatherAlarm] is dropped
+     * (OEM battery managers, a reboot before the widget updates). UPDATE
+     * rather than KEEP so changing the refresh interval in Settings takes
+     * effect on the already-queued job instead of being ignored.
+     */
     fun schedule(context: Context) {
-        val request = PeriodicWorkRequestBuilder<WeatherRefreshWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
+        val period = WidgetSettings.refreshIntervalMinutes(context)
+            .coerceAtLeast(MIN_PERIOD_MINUTES)
+        val request = PeriodicWorkRequestBuilder<WeatherRefreshWorker>(period, TimeUnit.MINUTES)
             .setConstraints(online)
             .build()
         WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.KEEP, request)
+            .enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
     fun cancel(context: Context) {
+        WeatherAlarm.cancel(context)
         WorkManager.getInstance(context).apply {
             cancelUniqueWork(PERIODIC)
             cancelUniqueWork(NOW)

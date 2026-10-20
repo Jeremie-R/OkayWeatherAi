@@ -1,6 +1,7 @@
 package com.roberrini.okayweather.widget
 
 import android.content.Context
+import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
@@ -126,6 +127,7 @@ private const val TEMP_BOX_LEFT = 0.43f
 private const val TEMP_BOX_TOP = 0.235f
 private const val TEMP_BOX_WIDTH = 0.42f
 private const val TEMP_FONT = 0.21f
+private const val STALE_FONT = 0.075f
 private const val ICON_LEFT = 0.20f
 private const val ICON_TOP = 0.38f
 private const val ICON_SIZE = 0.42f
@@ -149,19 +151,36 @@ private fun TemperaturePill(snapshot: WeatherSnapshot?, onClick: Action) {
             // accent container: the icons' purples and yellows clash with lavender.
             colorFilter = ColorFilter.tint(GlanceTheme.colors.surface),
         )
+        val stale = snapshot?.isStale() == true
         Box(modifier = GlanceModifier.padding(start = ox + s * TEMP_BOX_LEFT, top = oy + s * TEMP_BOX_TOP)) {
-            Text(
-                text = snapshot?.let { "${it.tempC.roundToInt()}°" }
-                    ?: context.getString(R.string.widget_temp_placeholder),
-                modifier = GlanceModifier.width(s * TEMP_BOX_WIDTH),
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSurface,
-                    fontSize = (s.value * TEMP_FONT).sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                ),
-                maxLines = 1,
-            )
+            Column(modifier = GlanceModifier.width(s * TEMP_BOX_WIDTH)) {
+                Text(
+                    text = snapshot?.let { "${it.tempC.roundToInt()}°" }
+                        ?: context.getString(R.string.widget_temp_placeholder),
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    style = TextStyle(
+                        // Muted when stale, so an out-of-date reading doesn't
+                        // look as authoritative as a fresh one.
+                        color = if (stale) GlanceTheme.colors.onSurfaceVariant else GlanceTheme.colors.onSurface,
+                        fontSize = (s.value * TEMP_FONT).sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    ),
+                    maxLines = 1,
+                )
+                if (stale && snapshot != null) {
+                    Text(
+                        text = formatClock(context, snapshot.dt),
+                        modifier = GlanceModifier.fillMaxWidth(),
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSurfaceVariant,
+                            fontSize = (s.value * STALE_FONT).sp,
+                            textAlign = TextAlign.Center,
+                        ),
+                        maxLines = 1,
+                    )
+                }
+            }
         }
         Box(modifier = GlanceModifier.padding(start = ox + s * ICON_LEFT, top = oy + s * ICON_TOP)) {
             Image(
@@ -222,6 +241,12 @@ private fun RainCard(snapshot: WeatherSnapshot, rain: UpcomingRain, onClick: Act
                     style = TextStyle(color = onSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold),
                     maxLines = 1,
                 )
+                Spacer(modifier = GlanceModifier.defaultWeight())
+                Text(
+                    text = formatClock(context, snapshot.dt),
+                    style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp),
+                    maxLines = 1,
+                )
             }
             Spacer(modifier = GlanceModifier.height(CARD_GAP))
             Text(
@@ -240,6 +265,10 @@ private fun RainCard(snapshot: WeatherSnapshot, rain: UpcomingRain, onClick: Act
         }
     }
 }
+
+/** Observation time in the device's own 12/24-hour format. */
+private fun formatClock(context: Context, unixSeconds: Long): String =
+    DateFormat.getTimeFormat(context).format(java.util.Date(unixSeconds * 1000L))
 
 /** The app's --chart-rain (oklch 0.68 0.15 240) in sRGB; kept brand-blue in both themes. */
 private const val RAIN_LINE_COLOR = 0xFF1AA2EB.toInt()
