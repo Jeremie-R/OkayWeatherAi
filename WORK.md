@@ -62,7 +62,11 @@ Kotlin lives in `android/app/src/main/java/com/roberrini/okayweather/`:
 | `weather/WeatherApi.kt` | OWM One Call 3.0 (`current` + `minutely`, metric), same public key as `src/lib/owm.ts`. |
 | `weather/WeatherSnapshot.kt` | The stored data (JSON) + a SharedPreferences cache. |
 | `weather/WidgetLocation.kt` | Device last-known location if location permission is granted, else Amsterdam — the same fallback the app uses. |
-| `weather/WeatherRefresh.kt` | `WeatherRefreshWorker` (CoroutineWorker) + scheduling: every 30 min, an immediate run when a widget is placed / the app is opened (`MainActivity.onResume`), and 10-minute follow-ups while rain is expected. |
+| `weather/WeatherRefresh.kt` | `WeatherRefreshWorker` (CoroutineWorker) + the WorkManager backstop schedule. |
+| `weather/WeatherAlarm.kt` | The heartbeat — see **Keeping the widget fresh** below. |
+| `weather/WidgetSettings.kt` | Refresh interval and pinned place, written from Settings via the plugin. |
+| `plugin/OkayWeatherPlugin.kt` | Capacitor bridge: Material You palette + widget config. |
+| `plugin/MaterialYou.kt` | Reads Android's `system_accent*` / `system_neutral*` ramps. |
 
 Data flow: worker → `WeatherStore` (cache) → `WeatherWidget.publish()` writes the
 JSON into each widget's Glance state (DataStore) and calls `updateAll()`. The
@@ -90,6 +94,63 @@ adb shell am start -n com.roberrini.okayweather/.MainActivity   # onResume -> re
 ```
 `adb emu geo fix` alone is not enough — nothing holds an active GPS request.
 
+## Keeping the widget fresh
+
+The widget used to go stale until the app was opened. The cause was App
+Standby: WorkManager periodic work is bucketed, so on a phone whose owner
+hasn't opened the app for a day or two a "30 minute" job slips to hours.
+Three layers now, strongest first:
+
+1. **`WeatherAlarm`** — `AlarmManager.setAndAllowWhileIdle`, the one
+   primitive that still fires during Doze. Inexact on purpose (the system
+   batches it, and it needs no `SCHEDULE_EXACT_ALARM`), re-armed after every
+   run, cancelled when no widget is placed. Interval comes from Settings.
+2. **`updatePeriodMillis=1800000`** — the OS's own widget update. Costs
+   nothing, is re-delivered after a reboot, and is where the alarm gets
+   re-armed, so the schedule self-heals without a boot receiver.
+3. **WorkManager periodic** — survives if an OEM battery manager drops the
+   alarm. Uses `UPDATE` so an interval change takes effect.
+
+Plus a 10-minute follow-up while rain is expected, and an immediate refresh
+on app resume. Staleness is also visible rather than silent: past 90 minutes
+the pill mutes the temperature and shows the observation time.
+
+Note that **no mechanism can fetch during deep Doze** — the system suspends
+network for background apps until a maintenance window. The alarm fires
+promptly once the device wakes, which is when anyone is actually looking.
+
+## Settings (`src/routes/_tabs.settings.tsx`)
+
+Stored in one localStorage entry (`lib/settings.ts`, `hooks/use-settings.tsx`).
+
+| Setting | Notes |
+| --- | --- |
+| Theme | system / light / dark. The dark palette already existed in `styles.css` but nothing applied the class. An inline script in `__root.tsx` applies it before first paint. |
+| Surface | solid / frosted. Frosted is scoped to `[data-surface="frosted"]` rules — translucent cards over a brand gradient. |
+| Colours | default / Material You (Android 12+ only, hidden on web). |
+| Icons | candy (default) or classic, from OkayWeatherV2. |
+| Units | °C/°F, km/h / m/s / mph, 24h/12h. °C and km/h stay internal; only display converts, so `windTier()` thresholds still work. |
+| Widget | Refresh interval and device-location vs pinned city, through the plugin. |
+
+**Material You + frosted interact.** The palette is written inline on
+`<html>`, which outranks the stylesheet, so under frosted
+`lib/materialyou.ts` skips the surface *fill* variables and only recolours
+foregrounds, accents and the gradient. Removing that guard makes the glass
+go opaque and the gradient disappear.
+
+## Weather map
+
+- **CARTO basemaps now need a key** (`?key=` on `basemaps.cartocdn.com`);
+  without it every tile reads "API KEY REQUIRED". The key lives in
+  `src/components/MapPrecipitation.tsx`. Free for non-commercial use to 5M
+  tiles/month; the attribution under the map is part of the terms.
+- **RainViewer dropped nowcast** from the free feed on 1 Jan 2026 and caps
+  tiles at zoom 7 (above that it serves a black "Zoom Level Not Supported"
+  tile — the map's `maxZoom` is now 7 to match). No API key exists for it.
+- Rain *prediction* is unaffected elsewhere: the "Upcoming rain" section and
+  the widget's rain card both come from OpenWeatherMap's free `minutely`
+  block, not from the radar map.
+
 ## Next steps
 
 ### 1. Location in the real app
@@ -112,18 +173,9 @@ the app and the widget agree.
 - Follow Sundial: `keystore.properties` (gitignored) + `signingConfigs` in
   `app/build.gradle`; `./gradlew assembleRelease`.
 
-## Watch-outs when pulling Lovable's changes from `main`
+## Lovable
 
-- **`package.json` / `bun.lock`** — the only shared files this branch touches:
-  3 `@capacitor/*` entries and the `build:android` / `android:open` scripts.
-  If Lovable also edits deps you'll get a trivial conflict: keep both sides,
-  then `bun install` (not `--frozen-lockfile`) to re-resolve the lockfile.
-- `vite.capacitor.config.ts` relies on `@lovable.dev/vite-tanstack-config`
-  ≥ 2.13 forwarding `nitro: false` and `tanstackStart.spa`. If Lovable bumps that
-  package, run `bun run build:android` and make sure `dist/client/index.html`
-  still appears.
-- `.gitignore` / `.prettierignore` have a small appended Android block; Lovable
-  rewrites to these files merge cleanly as long as the block stays at the end.
-- Nothing under `src/` was changed. Option B above is the first thing that will
-  need a `src/` edit — do it through Lovable (or on `main`) so its sync doesn't
-  fight the branch.
+No longer in use — `src/` is edited directly here now. If it is ever
+reconnected, note that it owns `src/` and would need to be told about the
+Settings route, `lib/settings.ts`, `lib/units.ts`, `lib/native.ts` and
+`lib/materialyou.ts`.
