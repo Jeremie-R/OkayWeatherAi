@@ -56,7 +56,7 @@ Kotlin lives in `android/app/src/main/java/com/roberrini/okayweather/`:
 | --- | --- |
 | `widget/WeatherWidget.kt` | The two looks. **Pill**: a 45° capsule (`res/drawable/widget_pill_45.xml`, tinted `GlanceTheme.colors.surface`) with the condition icon on the bottom-left lobe and the temperature on the top-right one; positions are fractions of the square the pill is fitted into (`TEMP_*` / `ICON_*` constants). **Rain card**: when `upcomingRain().hasRain` — the exact rule of the app's "Upcoming rain" section — a rounded square with icon + temperature, the same summary string as the app, and a bitmap area chart of the next hour. |
 | `widget/RainChart.kt` | Canvas renderer for that chart (monotone curve, gradient fill, `now/+15/…/+60` axis), mirrors `UpcomingRainChart` in `src/components/UpcomingRainSection.tsx`. |
-| `widget/WeatherIcons.kt` | OWM icon code → `res/drawable/wi_*.xml`. Those 18 vectors are **generated** from `src/assets/weather-icons/*.svg` (paths + linear gradients only). Regenerate them if the SVGs change — the conversion is a ~40-line Python script over ElementTree; keep the same file names. |
+| `widget/WeatherIcons.kt` | OWM icon code → `res/drawable/wi_*.xml`. Those 18 vectors are **generated** from `src/assets/weather-icons-modern/*.svg` (paths + linear gradients only). Regenerate them if the SVGs change — the conversion is a ~40-line Python script over ElementTree; keep the same file names. The widget always uses the modern set: candy needs radial gradients and `<use>`, classic needs `<circle>`/`<rect>`/`<polygon>` and CSS classes, none of which the converter handles yet. |
 | `widget/WeatherWidgetReceiver.kt` | Starts/stops the refresh schedule with the first/last widget instance. |
 | `weather/UpcomingRain.kt` | Port of `src/lib/upcomingRain.ts`. **Keep in sync** with the TS file. |
 | `weather/WeatherApi.kt` | OWM One Call 3.0 (`current` + `minutely`, metric), same public key as `src/lib/owm.ts`. |
@@ -126,17 +126,25 @@ Stored in one localStorage entry (`lib/settings.ts`, `hooks/use-settings.tsx`).
 | Setting | Notes |
 | --- | --- |
 | Theme | system / light / dark. The dark palette already existed in `styles.css` but nothing applied the class. An inline script in `__root.tsx` applies it before first paint. |
-| Surface | solid / frosted. Frosted is scoped to `[data-surface="frosted"]` rules — translucent cards over a brand gradient. |
-| Colours | default / Material You (Android 12+ only, hidden on web). |
-| Icons | candy (default) or classic, from OkayWeatherV2. |
+| Style | One axis, three looks, set as `data-style` on `<html>`: **modern** (bordered cards, the stock look), **material** (tonal fills instead of borders — `--border` goes transparent and the palette is written inline), **frosted** (translucent cards over a gradient). |
+| Colour | Material only: the wallpaper palette (Android 12+) or one of six seeds. A seed is expanded into Material-style tonal ramps by `lib/palette.ts` in OKLCH, producing the same `accent1_600`-shaped map the native plugin returns — so both sources share one code path. On web, "wallpaper" falls back to the brand colour. |
+| Icons | **modern** (default, the rounded gradient set), **candy** (glossier, from OkayWeatherV2 "Weather new") or **classic** (the original 2020 set). The picker shows one sample each so it fits three across on a phone. |
 | Units | °C/°F, km/h / m/s / mph, 24h/12h. °C and km/h stay internal; only display converts, so `windTier()` thresholds still work. |
 | Widget | Refresh interval and device-location vs pinned city, through the plugin. |
 
-**Material You + frosted interact.** The palette is written inline on
-`<html>`, which outranks the stylesheet, so under frosted
-`lib/materialyou.ts` skips the surface *fill* variables and only recolours
-foregrounds, accents and the gradient. Removing that guard makes the glass
-go opaque and the gradient disappear.
+### Two traps in the appearance CSS
+
+- **Never write `-webkit-backdrop-filter` next to `backdrop-filter`.**
+  lightningcss drops *both* when it sees the duplicate — it already adds the
+  prefix itself from browserslist. This silently left the entire frosted
+  style with no blur at all, just translucency, which is easy to miss
+  because translucency alone still looks plausible.
+- **Full-screen sheets need `.app-sheet`.** Frosted sets `--background` to
+  fully transparent, so a `fixed inset-0 bg-background` overlay (the day and
+  alert views) let the page behind scroll through it and the two layouts
+  read as one jumble. `.app-sheet` gives them the page gradient, opaque;
+  their own cards still supply the glass. Pinned *bars* keep the
+  translucent treatment — that one is deliberate.
 
 ## Weather map
 
@@ -165,9 +173,9 @@ the app and the widget agree.
 - `SizeMode.Responsive` variants if you ever allow other cell sizes.
 - Show the app's "feels like" / condition text under the temperature on the
   pill for a 3×2 variant.
-- A Capacitor plugin bridge (`@capacitor/preferences`) if you'd rather the
-  widget follow the *app's* chosen city instead of device location — needs a
-  small `src/` change, see the earlier WORK.md revision in git history.
+- Let the widget follow the app's icon pack. Needs the converter extended to
+  radial gradients and `<use>` (candy) and to shapes plus `<style>` classes
+  (classic), then a pack prefix on the drawable names.
 
 ### 4. Release
 - Follow Sundial: `keystore.properties` (gitignored) + `signingConfigs` in

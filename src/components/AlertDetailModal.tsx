@@ -32,7 +32,7 @@ export function AlertDetailModal({
   const title = list.length === 1 ? "Weather alert" : `${list.length} weather alerts`;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-background animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background app-sheet animate-in fade-in duration-150">
       <div className="mx-auto max-w-[480px] pb-12">
         <header className="sticky top-0 z-10 flex items-center gap-2 bg-background/90 backdrop-blur px-3 pt-4 pb-3 border-b border-border/60">
           <button

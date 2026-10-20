@@ -198,18 +198,39 @@
 }
 
 /* ---------------------------------------------------------------------
- * Frosted surface (Settings → Appearance → Surface).
+ * Appearance styles (Settings → Appearance → Style).
  *
- * Glass only reads as glass when there is something behind it, so this
- * also puts a soft brand gradient on the page and makes the page wrapper
- * transparent to let it through. Text colours stay fully opaque — only
- * surfaces become translucent — so contrast holds up.
- *
- * backdrop-filter is applied by attribute substring match on Tailwind's
- * generated class names, which keeps it contained to this theme instead of
- * touching every component.
+ * One axis, set as data-style on <html>:
+ *   modern   - the stock look, nothing overridden here
+ *   material - sections separated by tonal fills instead of borders; the
+ *              palette itself is written inline by lib/materialyou.ts
+ *   frosted  - translucent surfaces over a colour gradient
  * ------------------------------------------------------------------- */
-[data-surface="frosted"] {
+
+/* --- Material -------------------------------------------------------- */
+/* The palette already puts --card a tonal step away from --background, so
+   borders would only add noise. Dropping them is what makes this read as
+   Material rather than as the modern style in different colours. */
+[data-style="material"] {
+  --border: transparent;
+  --radius: 1.125rem;
+}
+
+/* Separators inside cards still need to read, but as a faint tint of the
+   surface rather than a drawn line. */
+[data-style="material"] :is([class*="border-t"], [class*="border-b"]) {
+  border-color: color-mix(in oklab, currentColor 12%, transparent);
+}
+
+/* --- Frosted --------------------------------------------------------- */
+/* Glass only reads as glass when there is something behind it, so this also
+   puts a soft brand gradient on the page and makes the page wrapper
+   transparent to let it through. Text colours stay fully opaque — only
+   surfaces become translucent — so contrast holds up.
+   backdrop-filter is applied by attribute substring match on Tailwind's
+   generated class names, which keeps it contained to this style instead of
+   touching every component. */
+[data-style="frosted"] {
   --background: oklch(1 0 0 / 0);
   --card: oklch(1 0 0 / 0.55);
   --popover: oklch(1 0 0 / 0.85);
@@ -217,7 +238,7 @@
   --muted: oklch(1 0 0 / 0.45);
 }
 
-[data-surface="frosted"].dark {
+[data-style="frosted"].dark {
   --background: oklch(0 0 0 / 0);
   --card: oklch(1 0 0 / 0.08);
   --popover: oklch(0.2 0.03 265 / 0.9);
@@ -225,53 +246,83 @@
   --muted: oklch(1 0 0 / 0.1);
 }
 
-[data-surface="frosted"] body {
+[data-style="frosted"] body {
   background-color: oklch(0.96 0.015 285);
-  /* Material You overrides --surface-grad-* inline on <html>; the fallbacks
-     are the brand gradient from the app icon. */
   background-image: linear-gradient(
     160deg,
-    var(--surface-grad-1, oklch(0.9 0.05 310)) 0%,
-    var(--surface-grad-2, oklch(0.88 0.06 275)) 55%,
-    var(--surface-grad-3, oklch(0.93 0.03 250)) 100%
+    oklch(0.9 0.05 310) 0%,
+    oklch(0.88 0.06 275) 55%,
+    oklch(0.93 0.03 250) 100%
   );
   background-attachment: fixed;
   min-height: 100dvh;
 }
 
-[data-surface="frosted"].dark body {
+[data-style="frosted"].dark body {
   background-color: oklch(0.16 0.03 275);
   background-image: linear-gradient(
     160deg,
-    var(--surface-grad-1, oklch(0.26 0.06 300)) 0%,
-    var(--surface-grad-2, oklch(0.19 0.05 272)) 55%,
-    var(--surface-grad-3, oklch(0.14 0.03 255)) 100%
+    oklch(0.26 0.06 300) 0%,
+    oklch(0.19 0.05 272) 55%,
+    oklch(0.14 0.03 255) 100%
   );
 }
 
-[data-surface="frosted"] :is([class*="bg-card"], [class*="bg-popover"], [class*="bg-muted"]) {
+[data-style="frosted"] :is([class*="bg-card"], [class*="bg-popover"], [class*="bg-muted"]) {
   backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
 
-/* The tab bar sits on --background, which is transparent here, so it needs
-   its own glass rather than inheriting one. */
-[data-surface="frosted"] nav[class*="bg-background"] {
-  background-color: oklch(1 0 0 / 0.6);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
+/*
+ * Bars pinned to the viewport — the tab bar, a sticky header — sit on
+ * --background, which is fully transparent here, so they would let the page
+ * scroll through them. Give them their own glass.
+ *
+ * Note: write backdrop-filter unprefixed only. Adding the -webkit- duplicate
+ * makes lightningcss drop BOTH, which silently left the whole frosted style
+ * with no blur at all.
+ */
+[data-style="frosted"] :is([class*="fixed"], [class*="sticky"])[class*="bg-background"] {
+  background-color: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(28px) saturate(150%);
 }
 
-[data-surface="frosted"].dark nav[class*="bg-background"] {
-  background-color: oklch(0.18 0.03 272 / 0.7);
+[data-style="frosted"].dark :is([class*="fixed"], [class*="sticky"])[class*="bg-background"] {
+  background-color: oklch(0.17 0.03 272 / 0.78);
+}
+
+/*
+ * Full-screen sheets (a day, an alert) are a different case: they replace the
+ * page rather than floating over it, so any translucency shows the screen
+ * underneath and the two read as one jumbled layout. Give them the same
+ * gradient as the page, fully opaque — their own cards supply the glass.
+ */
+[data-style="frosted"] .app-sheet {
+  background-color: oklch(0.96 0.015 285);
+  background-image: linear-gradient(
+    160deg,
+    oklch(0.9 0.05 310) 0%,
+    oklch(0.88 0.06 275) 55%,
+    oklch(0.93 0.03 250) 100%
+  );
+  background-attachment: fixed;
+}
+
+[data-style="frosted"].dark .app-sheet {
+  background-color: oklch(0.16 0.03 275);
+  background-image: linear-gradient(
+    160deg,
+    oklch(0.26 0.06 300) 0%,
+    oklch(0.19 0.05 272) 55%,
+    oklch(0.14 0.03 255) 100%
+  );
 }
 
 /* Leaflet paints its own white container; keep the map opaque so radar
    tiles stay readable against the gradient. */
-[data-surface="frosted"] .map-precip {
+[data-style="frosted"] .map-precip {
   background-color: oklch(0.98 0.005 260);
 }
 
-[data-surface="frosted"].dark .map-precip {
+[data-style="frosted"].dark .map-precip {
   background-color: oklch(0.22 0.02 265);
 }

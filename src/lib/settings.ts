@@ -7,28 +7,53 @@
  */
 
 export type ThemeMode = "system" | "light" | "dark";
-export type SurfaceStyle = "solid" | "frosted";
-export type AccentSource = "default" | "materialYou";
-export type IconPack = "candy" | "classic";
+
+/**
+ * One axis, three mutually exclusive looks:
+ *   modern   - bordered cards on a plain background (the original look)
+ *   material - Material You: sections separated by tonal fills, no borders,
+ *              palette from the wallpaper or a chosen colour
+ *   frosted  - translucent cards over a colour gradient
+ */
+export type AppStyle = "modern" | "material" | "frosted";
+
+export type IconPack = "modern" | "candy" | "classic";
 export type TempUnit = "c" | "f";
 export type WindUnit = "kmh" | "ms" | "mph";
 export type ClockFormat = "24h" | "12h";
 
+/** "wallpaper" follows Android's own palette; anything else is a #rrggbb seed. */
+export const WALLPAPER = "wallpaper";
+
 export interface Settings {
   theme: ThemeMode;
-  surface: SurfaceStyle;
-  accent: AccentSource;
+  style: AppStyle;
+  /** Only meaningful when style is "material". */
+  materialColor: string;
   iconPack: IconPack;
   temp: TempUnit;
   wind: WindUnit;
   clock: ClockFormat;
 }
 
+export const ICON_PACKS: IconPack[] = ["modern", "candy", "classic"];
+export const APP_STYLES: AppStyle[] = ["modern", "material", "frosted"];
+
+/** Seed colours offered alongside the wallpaper option. */
+export const MATERIAL_COLOR_PRESETS: { value: string; label: string }[] = [
+  { value: WALLPAPER, label: "Wallpaper" },
+  { value: "#9e93c7", label: "Lilac" },
+  { value: "#4b7fd6", label: "Blue" },
+  { value: "#2f9e7e", label: "Green" },
+  { value: "#d08a3e", label: "Amber" },
+  { value: "#c2548c", label: "Rose" },
+];
+
 export const DEFAULT_SETTINGS: Settings = {
   theme: "system",
-  surface: "solid",
-  accent: "default",
-  iconPack: "candy",
+  style: "modern",
+  materialColor: WALLPAPER,
+  iconPack: "modern",
   temp: "c",
   wind: "kmh",
   clock: "24h",
@@ -37,22 +62,26 @@ export const DEFAULT_SETTINGS: Settings = {
 export const SETTINGS_KEY = "okayweather.settings";
 
 const THEMES: ThemeMode[] = ["system", "light", "dark"];
-const SURFACES: SurfaceStyle[] = ["solid", "frosted"];
-const ACCENTS: AccentSource[] = ["default", "materialYou"];
-const ICON_PACKS: IconPack[] = ["candy", "classic"];
 const TEMPS: TempUnit[] = ["c", "f"];
 const WINDS: WindUnit[] = ["kmh", "ms", "mph"];
 const CLOCKS: ClockFormat[] = ["24h", "12h"];
+
+const HEX = /^#[0-9a-f]{6}$/i;
 
 /** Never trust what's in storage — an old build may have written other values. */
 export function normalizeSettings(raw: unknown): Settings {
   const o = (raw ?? {}) as Partial<Settings>;
   const pick = <T>(value: unknown, allowed: T[], fallback: T): T =>
     allowed.includes(value as T) ? (value as T) : fallback;
+  const color =
+    typeof o.materialColor === "string" &&
+    (o.materialColor === WALLPAPER || HEX.test(o.materialColor))
+      ? o.materialColor
+      : DEFAULT_SETTINGS.materialColor;
   return {
     theme: pick(o.theme, THEMES, DEFAULT_SETTINGS.theme),
-    surface: pick(o.surface, SURFACES, DEFAULT_SETTINGS.surface),
-    accent: pick(o.accent, ACCENTS, DEFAULT_SETTINGS.accent),
+    style: pick(o.style, APP_STYLES, DEFAULT_SETTINGS.style),
+    materialColor: color,
     iconPack: pick(o.iconPack, ICON_PACKS, DEFAULT_SETTINGS.iconPack),
     temp: pick(o.temp, TEMPS, DEFAULT_SETTINGS.temp),
     wind: pick(o.wind, WINDS, DEFAULT_SETTINGS.wind),
@@ -94,16 +123,15 @@ const THEME_COLOR = { light: "#ffffff", dark: "#1a1c23" } as const;
 
 /**
  * Push the settings that are expressed in CSS onto <html>. Tailwind's dark
- * variant keys off the `dark` class (see styles.css), the surface and accent
- * styles off data attributes.
+ * variant keys off the `dark` class (see styles.css), the look off
+ * data-style.
  */
 export function applySettings(settings: Settings): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   const resolved = resolveTheme(settings.theme);
   root.classList.toggle("dark", resolved === "dark");
-  root.dataset.surface = settings.surface;
-  root.dataset.accent = settings.accent;
+  root.dataset.style = settings.style;
   // Tells the browser to render native widgets (scrollbars, form controls)
   // in the matching scheme.
   root.style.colorScheme = resolved;
@@ -123,7 +151,6 @@ try{s=JSON.parse(localStorage.getItem(${JSON.stringify(SETTINGS_KEY)})||"{}")}ca
 var m=s.theme||"system";
 var dark=m==="dark"||(m==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);
 d.classList.toggle("dark",dark);
-d.dataset.surface=s.surface||"solid";
-d.dataset.accent=s.accent||"default";
+d.dataset.style=s.style||"modern";
 d.style.colorScheme=dark?"dark":"light";
 }catch(e){}})();`;

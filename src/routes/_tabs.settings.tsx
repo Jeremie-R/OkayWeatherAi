@@ -4,7 +4,7 @@ import { WeatherIcon } from "@/components/WeatherIcon";
 import { useSettings } from "@/hooks/use-settings";
 import { getLast } from "@/lib/geo";
 import { getWidgetConfig, isNative, setWidgetConfig, type WidgetConfig } from "@/lib/native";
-import type { IconPack, Settings } from "@/lib/settings";
+import { MATERIAL_COLOR_PRESETS, WALLPAPER, type IconPack, type Settings } from "@/lib/settings";
 
 export const Route = createFileRoute("/_tabs/settings")({
   head: () => ({
@@ -16,10 +16,11 @@ export const Route = createFileRoute("/_tabs/settings")({
   component: SettingsPage,
 });
 
-/** A few codes that look clearly different between the two packs. */
-const ICON_SAMPLE = ["01d", "10d", "11d", "13d"];
+/** One code, shown in every pack — mostly cloudy reads clearly in all three. */
+const ICON_SAMPLE = "04d";
 
 const ICON_PACK_LABELS: Record<IconPack, string> = {
+  modern: "Modern",
   candy: "Candy",
   classic: "Classic",
 };
@@ -61,35 +62,63 @@ function SettingsPage() {
                 ]}
               />
             </Row>
-            <Row label="Surface" hint="Frosted blurs the background behind cards.">
+            <Row label="Style" hint={STYLE_HINTS[settings.style]}>
               <Segmented
-                value={settings.surface}
-                onChange={(v) => set("surface", v)}
+                value={settings.style}
+                onChange={(v) => set("style", v)}
                 options={[
-                  { value: "solid", label: "Solid" },
+                  { value: "modern", label: "Modern" },
+                  { value: "material", label: "Material" },
                   { value: "frosted", label: "Frosted" },
                 ]}
               />
             </Row>
-            {native && (
+            {settings.style === "material" && (
               <Row
-                label="Colours"
-                hint="Material You takes its palette from your wallpaper. Android 12 and later."
+                label="Colour"
+                hint={
+                  settings.materialColor === WALLPAPER
+                    ? native
+                      ? "Following your wallpaper."
+                      : "Wallpaper colours need the Android app; using the app's own palette here."
+                    : "A fixed colour, the same everywhere."
+                }
               >
-                <Segmented
-                  value={settings.accent}
-                  onChange={(v) => set("accent", v)}
-                  options={[
-                    { value: "default", label: "Default" },
-                    { value: "materialYou", label: "Material You" },
-                  ]}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  {MATERIAL_COLOR_PRESETS.map((c) => {
+                    const active = settings.materialColor === c.value;
+                    const isWallpaper = c.value === WALLPAPER;
+                    return (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => set("materialColor", c.value)}
+                        aria-pressed={active}
+                        aria-label={c.label}
+                        title={c.label}
+                        className={`h-9 w-9 rounded-full border transition ${
+                          active
+                            ? "border-foreground/70 ring-2 ring-foreground/30"
+                            : "border-border/60 hover:border-foreground/40"
+                        }`}
+                        style={
+                          isWallpaper
+                            ? {
+                                backgroundImage:
+                                  "conic-gradient(#e57373,#ba68c8,#64b5f6,#4db6ac,#fff176,#e57373)",
+                              }
+                            : { backgroundColor: c.value }
+                        }
+                      />
+                    );
+                  })}
+                </div>
               </Row>
             )}
           </Section>
 
           <Section title="Icons">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               {(Object.keys(ICON_PACK_LABELS) as IconPack[]).map((pack) => {
                 const active = settings.iconPack === pack;
                 return (
@@ -98,18 +127,14 @@ function SettingsPage() {
                     type="button"
                     onClick={() => set("iconPack", pack)}
                     aria-pressed={active}
-                    className={`rounded-2xl border p-3 text-left transition ${
+                    className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 transition ${
                       active
                         ? "border-foreground/70 bg-muted/50"
                         : "border-border/60 hover:bg-muted/30"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-1">
-                      {ICON_SAMPLE.map((code) => (
-                        <WeatherIcon key={code} code={code} pack={pack} size={34} />
-                      ))}
-                    </div>
-                    <p className="mt-2 text-xs font-medium">{ICON_PACK_LABELS[pack]}</p>
+                    <WeatherIcon code={ICON_SAMPLE} pack={pack} size={44} />
+                    <span className="text-xs font-medium">{ICON_PACK_LABELS[pack]}</span>
                   </button>
                 );
               })}
@@ -216,6 +241,12 @@ function SettingsPage() {
     </div>
   );
 }
+
+const STYLE_HINTS: Record<Settings["style"], string> = {
+  modern: "Bordered cards on a plain background.",
+  material: "Sections set apart by colour instead of borders.",
+  frosted: "Translucent cards over a colour gradient.",
+};
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (

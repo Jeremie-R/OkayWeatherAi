@@ -15,8 +15,10 @@ import {
   saveSettings,
   type Settings,
 } from "@/lib/settings";
-import { applyMaterialYou, clearMaterialYou } from "@/lib/materialyou";
+import { applyMaterialPalette, clearMaterialPalette } from "@/lib/materialyou";
 import { getMaterialYouPalette } from "@/lib/native";
+import { paletteFromSeed } from "@/lib/palette";
+import { WALLPAPER } from "@/lib/settings";
 
 interface SettingsContextValue {
   settings: Settings;
@@ -47,29 +49,37 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     saveSettings(settings);
   }, [settings, hydrated]);
 
-  // Material You: ask the shell for the wallpaper palette and paint it onto
-  // the CSS variables. Re-runs on theme changes because light and dark map to
+  // Material style: either Android's wallpaper ramps or ramps generated from
+  // the chosen colour. Re-runs on theme changes because light and dark map to
   // different shades of the same palette.
   useEffect(() => {
     if (!hydrated) return;
-    if (settings.accent !== "materialYou") {
-      clearMaterialYou();
+    if (settings.style !== "material") {
+      clearMaterialPalette();
       return;
     }
+    const resolved = resolveTheme(settings.theme);
+
+    if (settings.materialColor !== WALLPAPER) {
+      applyMaterialPalette(paletteFromSeed(settings.materialColor), resolved);
+      return;
+    }
+
     let cancelled = false;
     void getMaterialYouPalette().then((palette) => {
       if (cancelled) return;
       if (palette.available && palette.colors) {
-        applyMaterialYou(palette.colors, resolveTheme(settings.theme), settings.surface);
+        applyMaterialPalette(palette.colors, resolved);
       } else {
-        // Web build, or Android below 12 — stay on the stock palette.
-        clearMaterialYou();
+        // Web build, or Android below 12 — fall back to the brand colour so
+        // the style still looks like itself rather than doing nothing.
+        applyMaterialPalette(paletteFromSeed("#9e93c7"), resolved);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [settings.accent, settings.theme, settings.surface, hydrated]);
+  }, [settings.style, settings.materialColor, settings.theme, hydrated]);
 
   // Follow the OS while the theme is set to "system".
   useEffect(() => {

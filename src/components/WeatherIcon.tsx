@@ -1,21 +1,28 @@
 import { useSettings } from "@/hooks/use-settings";
-import type { IconPack } from "@/lib/settings";
+import { ICON_PACKS, type IconPack } from "@/lib/settings";
 
-// Both packs are keyed by OpenWeatherMap icon code (01d, 10n, ...) and carry
+// Each pack is keyed by OpenWeatherMap icon code (01d, 10n, ...) and carries
 // the same 18 files, so switching is a straight lookup swap.
-//   candy   - the rounded gradient set, the app's default
-//   classic - the original OkayWeather set (flat geometric, circa 2020)
-const candy = import.meta.glob("../assets/weather-icons/*.svg", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
-
-const classic = import.meta.glob("../assets/weather-icons-classic/*.svg", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
+//   modern  - rounded gradient set, the app's default
+//   candy   - glossier set with radial gradients (OkayWeatherV2 "Weather new")
+//   classic - the original OkayWeather set, flat and geometric
+const modules: Record<IconPack, Record<string, string>> = {
+  modern: import.meta.glob("../assets/weather-icons-modern/*.svg", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  }) as Record<string, string>,
+  candy: import.meta.glob("../assets/weather-icons-candy/*.svg", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  }) as Record<string, string>,
+  classic: import.meta.glob("../assets/weather-icons-classic/*.svg", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  }) as Record<string, string>,
+};
 
 function byCode(mod: Record<string, string>): Record<string, string> {
   const map: Record<string, string> = {};
@@ -26,14 +33,14 @@ function byCode(mod: Record<string, string>): Record<string, string> {
   return map;
 }
 
-const PACKS: Record<IconPack, Record<string, string>> = {
-  candy: byCode(candy),
-  classic: byCode(classic),
-};
+const PACKS = Object.fromEntries(ICON_PACKS.map((pack) => [pack, byCode(modules[pack])])) as Record<
+  IconPack,
+  Record<string, string>
+>;
 
 /** Resolve a code to a URL in a given pack, falling back to clear-day. */
 export function weatherIconUrl(code: string, pack: IconPack): string {
-  const map = PACKS[pack] ?? PACKS.candy;
+  const map = PACKS[pack] ?? PACKS.modern;
   return map[code] ?? map["01d"];
 }
 

@@ -284,7 +284,7 @@ export function DayDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto overscroll-y-contain bg-background animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-y-contain bg-background app-sheet animate-in fade-in duration-150"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
