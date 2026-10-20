@@ -2,6 +2,13 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { tileUrl } from "@/lib/rainviewer";
 
+// CARTO basemaps require a key since 2026 — without it every tile is replaced
+// by an "API KEY REQUIRED" placeholder. Free for non-commercial use up to 5M
+// tiles/month; the attribution below the map is part of the terms.
+// Keys are public by nature (they ship in the client); rotate at carto.com.
+const CARTO_KEY = "cb1_4q2g_1_98925bfa962c131363c358e9";
+const CARTO_BASEMAP = `https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`;
+
 interface Props {
   lat: number;
   lon: number;
@@ -22,14 +29,13 @@ export function MapPrecipitation({ lat, lon, host, framePath }: Props) {
       center: [lat, lon],
       zoom: 6,
       minZoom: 4,
-      maxZoom: 8,
+      // RainViewer caps radar tiles at zoom 7; above that it serves a black
+      // "Zoom Level Not Supported" placeholder over the whole map.
+      maxZoom: 7,
       zoomControl: false,
       attributionControl: false,
     });
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
-      { subdomains: "abcd" },
-    ).addTo(map);
+    L.tileLayer(CARTO_BASEMAP, { subdomains: "abcd" }).addTo(map);
     markerRef.current = L.circleMarker([lat, lon], {
       radius: 6,
       color: "#0f172a",
