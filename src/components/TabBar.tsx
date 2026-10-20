@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Cloud, Map } from "lucide-react";
+import { Cloud, Map, Settings } from "lucide-react";
 
 export function TabBar() {
   return (
@@ -7,6 +7,7 @@ export function TabBar() {
       <div className="mx-auto flex max-w-[480px] items-stretch">
         <TabLink to="/" icon={<Cloud className="h-5 w-5" />} label="Weather" />
         <TabLink to="/map" icon={<Map className="h-5 w-5" />} label="Map" />
+        <TabLink to="/settings" icon={<Settings className="h-5 w-5" />} label="Settings" />
       </div>
     </nav>
   );

@@ -98,13 +98,13 @@
   --wind-windy: oklch(0.74 0.12 150);
   --wind-storm: oklch(0.55 0.14 150);
   /* UV tiers */
-  --uv-low: oklch(0.82 0.10 150);
+  --uv-low: oklch(0.82 0.1 150);
   --uv-moderate: oklch(0.85 0.12 95);
-  --uv-high: oklch(0.80 0.14 60);
-  --uv-very-high: oklch(0.70 0.17 35);
-  --uv-extreme: oklch(0.60 0.20 350);
+  --uv-high: oklch(0.8 0.14 60);
+  --uv-very-high: oklch(0.7 0.17 35);
+  --uv-extreme: oklch(0.6 0.2 350);
   /* AQI tiers */
-  --aqi-good: oklch(0.84 0.10 150);
+  --aqi-good: oklch(0.84 0.1 150);
   --aqi-fair: oklch(0.86 0.11 110);
   --aqi-passable: oklch(0.83 0.13 80);
   --aqi-poor: oklch(0.72 0.16 45);
@@ -145,21 +145,21 @@
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --chart-rain: oklch(0.72 0.15 240);
-  --chart-temp: oklch(0.70 0.18 35);
+  --chart-temp: oklch(0.7 0.18 35);
   --wind-calm: oklch(0.45 0.04 160);
   --wind-breezy: oklch(0.55 0.09 155);
   --wind-windy: oklch(0.68 0.13 150);
-  --wind-storm: oklch(0.80 0.16 150);
-  --uv-low: oklch(0.70 0.12 150);
+  --wind-storm: oklch(0.8 0.16 150);
+  --uv-low: oklch(0.7 0.12 150);
   --uv-moderate: oklch(0.78 0.14 95);
   --uv-high: oklch(0.75 0.16 60);
   --uv-very-high: oklch(0.68 0.18 35);
-  --uv-extreme: oklch(0.62 0.20 350);
+  --uv-extreme: oklch(0.62 0.2 350);
   --aqi-good: oklch(0.72 0.12 150);
   --aqi-fair: oklch(0.78 0.13 110);
   --aqi-passable: oklch(0.76 0.14 80);
   --aqi-poor: oklch(0.68 0.17 45);
-  --aqi-hazardous: oklch(0.60 0.19 25);
+  --aqi-hazardous: oklch(0.6 0.19 25);
   --sidebar: oklch(0.208 0.042 265.755);
   --sidebar-foreground: oklch(0.984 0.003 247.858);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -181,7 +181,10 @@
     font-family: var(--font-sans);
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
@@ -192,4 +195,81 @@
 .map-precip .leaflet-top,
 .map-precip .leaflet-bottom {
   z-index: 1;
+}
+
+/* ---------------------------------------------------------------------
+ * Frosted surface (Settings → Appearance → Surface).
+ *
+ * Glass only reads as glass when there is something behind it, so this
+ * also puts a soft brand gradient on the page and makes the page wrapper
+ * transparent to let it through. Text colours stay fully opaque — only
+ * surfaces become translucent — so contrast holds up.
+ *
+ * backdrop-filter is applied by attribute substring match on Tailwind's
+ * generated class names, which keeps it contained to this theme instead of
+ * touching every component.
+ * ------------------------------------------------------------------- */
+[data-surface="frosted"] {
+  --background: oklch(1 0 0 / 0);
+  --card: oklch(1 0 0 / 0.55);
+  --popover: oklch(1 0 0 / 0.85);
+  --border: oklch(0.55 0.05 270 / 0.28);
+  --muted: oklch(1 0 0 / 0.45);
+}
+
+[data-surface="frosted"].dark {
+  --background: oklch(0 0 0 / 0);
+  --card: oklch(1 0 0 / 0.08);
+  --popover: oklch(0.2 0.03 265 / 0.9);
+  --border: oklch(1 0 0 / 0.16);
+  --muted: oklch(1 0 0 / 0.1);
+}
+
+[data-surface="frosted"] body {
+  background-color: oklch(0.96 0.015 285);
+  background-image: linear-gradient(
+    160deg,
+    oklch(0.9 0.05 310) 0%,
+    oklch(0.88 0.06 275) 55%,
+    oklch(0.93 0.03 250) 100%
+  );
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+[data-surface="frosted"].dark body {
+  background-color: oklch(0.16 0.03 275);
+  background-image: linear-gradient(
+    160deg,
+    oklch(0.26 0.06 300) 0%,
+    oklch(0.19 0.05 272) 55%,
+    oklch(0.14 0.03 255) 100%
+  );
+}
+
+[data-surface="frosted"] :is([class*="bg-card"], [class*="bg-popover"], [class*="bg-muted"]) {
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+/* The tab bar sits on --background, which is transparent here, so it needs
+   its own glass rather than inheriting one. */
+[data-surface="frosted"] nav[class*="bg-background"] {
+  background-color: oklch(1 0 0 / 0.6);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+}
+
+[data-surface="frosted"].dark nav[class*="bg-background"] {
+  background-color: oklch(0.18 0.03 272 / 0.7);
+}
+
+/* Leaflet paints its own white container; keep the map opaque so radar
+   tiles stay readable against the gradient. */
+[data-surface="frosted"] .map-precip {
+  background-color: oklch(0.98 0.005 260);
+}
+
+[data-surface="frosted"].dark .map-precip {
+  background-color: oklch(0.22 0.02 265);
 }

@@ -30,14 +30,15 @@ export function windTierTitle(tier: WindTier): string {
 
 const CARDINALS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 export function cardinalFromDeg(deg: number): string {
-  const i = Math.round(((deg % 360) + 360) % 360 / 45) % 8;
+  const i = Math.round((((deg % 360) + 360) % 360) / 45) % 8;
   return CARDINALS[i];
 }
 
 /** Average a list of compass degrees using vector mean (handles 350°/10° wrap). */
 export function averageDegrees(degs: number[]): number {
   if (!degs.length) return 0;
-  let x = 0, y = 0;
+  let x = 0,
+    y = 0;
   for (const d of degs) {
     const r = (d * Math.PI) / 180;
     x += Math.cos(r);
@@ -96,6 +97,10 @@ export function partOfDayRange(hour: number): "morning" | "afternoon" | "evening
   return null;
 }
 
+/**
+ * 24-hour wall clock for a unix time in a given zone. For user-facing times
+ * prefer formatClock() in lib/units.ts, which honours the 12/24h setting.
+ */
 export function formatTime(unix: number, tzOffset: number): string {
   const d = new Date((unix + tzOffset) * 1000);
   return d.toISOString().slice(11, 16);
@@ -105,10 +110,27 @@ export function localHour(unix: number, tzOffset: number): number {
   return new Date((unix + tzOffset) * 1000).getUTCHours();
 }
 
-export function localDayLabel(unix: number, tzOffset: number, idx: number): { short: string; date: string } {
+export function localDayLabel(
+  unix: number,
+  tzOffset: number,
+  idx: number,
+): { short: string; date: string } {
   const d = new Date((unix + tzOffset) * 1000);
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const short = idx === 0 ? "Today" : idx === 1 ? "Tomorrow" : dayNames[d.getUTCDay()];
   return { short, date: `${d.getUTCDate()} ${monthNames[d.getUTCMonth()]}` };
 }

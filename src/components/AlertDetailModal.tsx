@@ -29,8 +29,7 @@ export function AlertDetailModal({
 
   if (!open) return null;
   const list = alerts!;
-  const title =
-    list.length === 1 ? "Weather alert" : `${list.length} weather alerts`;
+  const title = list.length === 1 ? "Weather alert" : `${list.length} weather alerts`;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background animate-in fade-in duration-150">

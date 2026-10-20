@@ -23,9 +23,7 @@ export function getRecent(): SavedLocation[] {
 
 export function saveRecent(loc: SavedLocation) {
   if (typeof window === "undefined") return;
-  const list = getRecent().filter(
-    (l) => !(l.lat === loc.lat && l.lon === loc.lon),
-  );
+  const list = getRecent().filter((l) => !(l.lat === loc.lat && l.lon === loc.lon));
   list.unshift(loc);
   localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX)));
 }

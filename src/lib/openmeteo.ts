@@ -47,10 +47,7 @@ export function wmoToOwmIcon(code: number, isDay: boolean): string {
   return `04${dn}`;
 }
 
-export async function fetchOpenMeteoHourly(
-  lat: number,
-  lon: number,
-): Promise<OpenMeteoResponse> {
+export async function fetchOpenMeteoHourly(lat: number, lon: number): Promise<OpenMeteoResponse> {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),

@@ -32,10 +32,7 @@ export const AQI_TIER_COLOR: Record<AqiTier, string> = {
   hazardous: "var(--aqi-hazardous)",
 };
 
-export async function fetchAirQuality(
-  lat: number,
-  lon: number,
-): Promise<AirQuality | null> {
+export async function fetchAirQuality(lat: number, lon: number): Promise<AirQuality | null> {
   const url =
     `https://air-quality-api.open-meteo.com/v1/air-quality` +
     `?latitude=${lat}&longitude=${lon}&current=european_aqi&timezone=auto`;

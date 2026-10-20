@@ -1,6 +1,8 @@
 import { Sunrise, Sunset } from "lucide-react";
 import type { OneCallResponse } from "@/lib/owm";
-import { moonPhaseName, moonIllumination, daysToFull, formatTime, moonEmoji } from "@/lib/weather";
+import { moonPhaseName, moonIllumination, daysToFull, moonEmoji } from "@/lib/weather";
+import { useSettings } from "@/hooks/use-settings";
+import { formatClock } from "@/lib/units";
 
 /** Sun arc + sunrise/sunset times. Standalone, used inside larger cards. */
 export function SunArc({
@@ -16,6 +18,7 @@ export function SunArc({
   tzOffset: number;
   showTitle?: boolean;
 }) {
+  const { settings } = useSettings();
   const dayStartUtc = sunrise - ((sunrise + tzOffset) % 86400);
   const pos = (t: number) => Math.max(0, Math.min(1, (t - dayStartUtc) / 86400));
   const sunrisePct = pos(sunrise) * 100;
@@ -25,11 +28,11 @@ export function SunArc({
   return (
     <div>
       {showTitle && (
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Sun
-        </p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Sun</p>
       )}
-      <div className={`relative ${showTitle ? "mt-4" : ""} h-3 rounded-full bg-[var(--track-dusk)] overflow-visible`}>
+      <div
+        className={`relative ${showTitle ? "mt-4" : ""} h-3 rounded-full bg-[var(--track-dusk)] overflow-visible`}
+      >
         <div
           className="absolute inset-y-0 rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300"
           style={{ left: `${sunrisePct}%`, width: `${sunsetPct - sunrisePct}%` }}
@@ -45,11 +48,11 @@ export function SunArc({
       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <Sunrise className="h-3.5 w-3.5" />
-          {formatTime(sunrise, tzOffset)}
+          {formatClock(sunrise, tzOffset, settings.clock)}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Sunset className="h-3.5 w-3.5" />
-          {formatTime(sunset, tzOffset)}
+          {formatClock(sunset, tzOffset, settings.clock)}
         </span>
       </div>
     </div>
@@ -75,7 +78,13 @@ export function SunMoonCard({
   const toFull = daysToFull(moonPhase);
   return (
     <div className="space-y-5">
-      <SunArc sunrise={sunrise} sunset={sunset} currentDt={currentDt} tzOffset={tzOffset} showTitle />
+      <SunArc
+        sunrise={sunrise}
+        sunset={sunset}
+        currentDt={currentDt}
+        tzOffset={tzOffset}
+        showTitle
+      />
       <div className="flex items-center gap-4 pt-2 border-t border-border/60">
         <span className="text-4xl leading-none" aria-label={phaseName}>
           {moonEmoji(moonPhase)}
@@ -92,7 +101,13 @@ export function SunMoonCard({
 }
 
 /** @deprecated Home page now uses the unified TodaySection. Kept for compatibility. */
-export function SunMoonSection({ data, onOpenDay }: { data: OneCallResponse; onOpenDay?: () => void }) {
+export function SunMoonSection({
+  data,
+  onOpenDay,
+}: {
+  data: OneCallResponse;
+  onOpenDay?: () => void;
+}) {
   const { current, daily, timezone_offset } = data;
   return (
     <section className="px-5">

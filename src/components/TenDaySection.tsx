@@ -2,6 +2,8 @@ import { Droplets } from "lucide-react";
 import { WeatherIcon } from "./WeatherIcon";
 import type { OneCallResponse } from "@/lib/owm";
 import { localDayLabel } from "@/lib/weather";
+import { useSettings } from "@/hooks/use-settings";
+import { formatTemp, toDisplayTemp } from "@/lib/units";
 
 export function TenDaySection({
   data,
@@ -10,9 +12,8 @@ export function TenDaySection({
   data: OneCallResponse;
   onOpenDay: (dayIndex: number) => void;
 }) {
-  const days = data.daily
-    .map((d, i) => ({ d, i }))
-    .filter(({ i }) => i >= 2); // skip today & tomorrow (already shown in dedicated sections)
+  const { settings } = useSettings();
+  const days = data.daily.map((d, i) => ({ d, i })).filter(({ i }) => i >= 2); // skip today & tomorrow (already shown in dedicated sections)
   const allDays = data.daily;
   const periodMin = Math.min(...allDays.map((d) => d.temp.min));
   const periodMax = Math.max(...allDays.map((d) => d.temp.max));
@@ -50,7 +51,7 @@ export function TenDaySection({
                 )}
               </div>
               <span className="w-8 text-right text-sm tabular-nums text-muted-foreground">
-                {Math.round(d.temp.min)}°
+                {formatTemp(d.temp.min, settings.temp)}
               </span>
               <div className="relative h-1.5 flex-1 rounded-full bg-muted">
                 <div
@@ -59,7 +60,7 @@ export function TenDaySection({
                 />
               </div>
               <span className="w-8 text-right text-sm font-semibold tabular-nums">
-                {Math.round(d.temp.max)}°
+                {formatTemp(d.temp.max, settings.temp)}
               </span>
             </button>
           );

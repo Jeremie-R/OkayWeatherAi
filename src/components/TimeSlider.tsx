@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause } from "lucide-react";
 import type { RainViewerFrame } from "@/lib/rainviewer";
+import { useSettings } from "@/hooks/use-settings";
+import { formatClock } from "@/lib/units";
 
 interface Props {
   frames: RainViewerFrame[];
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export function TimeSlider({ frames, nowIndex, index, onChange, tzOffsetSec }: Props) {
+  const { settings } = useSettings();
   const [playing, setPlaying] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -39,7 +42,7 @@ export function TimeSlider({ frames, nowIndex, index, onChange, tzOffsetSec }: P
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{formatRel(deltaMin)}</span>
         <span className="font-mono tabular-nums text-foreground">
-          {formatClock(current.time, tzOffsetSec)}
+          {formatClock(current.time, tzOffsetSec, settings.clock)}
         </span>
         <button
           type="button"
@@ -89,11 +92,4 @@ function formatRel(min: number) {
   if (min === 0) return "now";
   if (min > 0) return `+${min} min`;
   return `${min} min`;
-}
-
-function formatClock(unix: number, tzOffsetSec: number) {
-  const d = new Date((unix + tzOffsetSec) * 1000);
-  const hh = String(d.getUTCHours()).padStart(2, "0");
-  const mm = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
 }

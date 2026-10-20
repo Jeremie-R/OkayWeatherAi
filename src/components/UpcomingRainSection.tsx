@@ -1,11 +1,4 @@
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import type { OneCallResponse } from "@/lib/owm";
 import { buildUpcomingRain } from "@/lib/upcomingRain";
 
@@ -30,9 +23,7 @@ export function UpcomingRainSection({
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Upcoming rain
             </p>
-            <p className="mt-1 text-base font-medium text-foreground">
-              {rain.summary}
-            </p>
+            <p className="mt-1 text-base font-medium text-foreground">{rain.summary}</p>
           </div>
           <span className="text-xs text-muted-foreground tabular-nums">
             peak {rain.peakMm.toFixed(rain.peakMm >= 1 ? 1 : 2)} mm/h

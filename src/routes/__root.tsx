@@ -10,6 +10,8 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { SettingsProvider } from "../hooks/use-settings";
+import { THEME_INIT_SCRIPT } from "../lib/settings";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { registerServiceWorker } from "../lib/registerSW";
 
@@ -88,8 +90,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "okay weather ai" },
       { name: "twitter:description", content: "Simple weather app" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1782819186214-weatherAIdemo.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1782819186214-weatherAIdemo.webp" },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1782819186214-weatherAIdemo.webp",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/ErHcbu28iBhLrB6SOMgbS2hkZgf2/social-images/social-1782819186214-weatherAIdemo.webp",
+      },
       { name: "theme-color", content: "#9e93c7" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
@@ -131,6 +141,12 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/*
+          Applies the saved theme before first paint. Without it a dark-mode
+          user gets a white flash on every load, because the real settings
+          only arrive once React has hydrated.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -149,8 +165,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <SettingsProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </SettingsProvider>
     </QueryClientProvider>
   );
 }

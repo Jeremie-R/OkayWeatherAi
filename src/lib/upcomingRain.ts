@@ -46,7 +46,10 @@ export function buildUpcomingRain(
   const startIdx = points.findIndex((p) => p.mm >= RAIN_FLOOR);
   let endIdx = points.length - 1;
   for (let i = points.length - 1; i >= 0; i--) {
-    if (points[i].mm >= RAIN_FLOOR) { endIdx = i; break; }
+    if (points[i].mm >= RAIN_FLOOR) {
+      endIdx = i;
+      break;
+    }
   }
   const startMin = points[startIdx].minute;
   const endMin = points[endIdx].minute;

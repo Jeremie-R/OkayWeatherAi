@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TabsRouteImport } from './routes/_tabs'
 import { Route as TabsIndexRouteImport } from './routes/_tabs.index'
+import { Route as TabsSettingsRouteImport } from './routes/_tabs.settings'
 import { Route as TabsMapRouteImport } from './routes/_tabs.map'
 
 const TabsRoute = TabsRouteImport.update({
@@ -22,6 +23,11 @@ const TabsIndexRoute = TabsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TabsRoute,
 } as any)
+const TabsSettingsRoute = TabsSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => TabsRoute,
+} as any)
 const TabsMapRoute = TabsMapRouteImport.update({
   id: '/map',
   path: '/map',
@@ -31,23 +37,26 @@ const TabsMapRoute = TabsMapRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof TabsIndexRoute
   '/map': typeof TabsMapRoute
+  '/settings': typeof TabsSettingsRoute
 }
 export interface FileRoutesByTo {
   '/map': typeof TabsMapRoute
+  '/settings': typeof TabsSettingsRoute
   '/': typeof TabsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_tabs': typeof TabsRouteWithChildren
   '/_tabs/map': typeof TabsMapRoute
+  '/_tabs/settings': typeof TabsSettingsRoute
   '/_tabs/': typeof TabsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/map'
+  fullPaths: '/' | '/map' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/map' | '/'
-  id: '__root__' | '/_tabs' | '/_tabs/map' | '/_tabs/'
+  to: '/map' | '/settings' | '/'
+  id: '__root__' | '/_tabs' | '/_tabs/map' | '/_tabs/settings' | '/_tabs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -70,6 +79,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TabsIndexRouteImport
       parentRoute: typeof TabsRoute
     }
+    '/_tabs/settings': {
+      id: '/_tabs/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof TabsSettingsRouteImport
+      parentRoute: typeof TabsRoute
+    }
     '/_tabs/map': {
       id: '/_tabs/map'
       path: '/map'
@@ -82,11 +98,13 @@ declare module '@tanstack/react-router' {
 
 interface TabsRouteChildren {
   TabsMapRoute: typeof TabsMapRoute
+  TabsSettingsRoute: typeof TabsSettingsRoute
   TabsIndexRoute: typeof TabsIndexRoute
 }
 
 const TabsRouteChildren: TabsRouteChildren = {
   TabsMapRoute: TabsMapRoute,
+  TabsSettingsRoute: TabsSettingsRoute,
   TabsIndexRoute: TabsIndexRoute,
 }
 

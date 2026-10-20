@@ -64,10 +64,7 @@ function MapPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[480px]">
-        <Header
-          name={`${location.name}, Map`}
-          onClick={() => setSheetOpen(true)}
-        />
+        <Header name={`${location.name}, Map`} onClick={() => setSheetOpen(true)} />
 
         <div className="space-y-4 px-5 pb-10">
           {mounted ? (
@@ -84,9 +81,7 @@ function MapPage() {
           )}
 
           <div className="rounded-3xl border border-border/60 bg-card p-4">
-            {q.isLoading && (
-              <p className="text-xs text-muted-foreground">Loading radar…</p>
-            )}
+            {q.isLoading && <p className="text-xs text-muted-foreground">Loading radar…</p>}
             {q.isError && (
               <p className="text-xs text-muted-foreground">Couldn't load radar data.</p>
             )}

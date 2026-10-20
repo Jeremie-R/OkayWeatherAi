@@ -3,6 +3,8 @@ import { WeatherIcon } from "./WeatherIcon";
 import { WindChip } from "./WindChip";
 import type { OneCallResponse, OwmHourly } from "@/lib/owm";
 import { localHour, msToKmh } from "@/lib/weather";
+import { useSettings } from "@/hooks/use-settings";
+import { toDisplayTemp } from "@/lib/units";
 
 function pickRep(hours: OwmHourly[]): OwmHourly | null {
   if (!hours.length) return null;
@@ -21,6 +23,7 @@ export function TomorrowSection({
   data: OneCallResponse;
   onOpenDetails: (dayIndex: number) => void;
 }) {
+  const { settings } = useSettings();
   const { hourly, timezone_offset, current } = data;
   const todayDate = new Date((current.dt + timezone_offset) * 1000).getUTCDate();
 
@@ -50,16 +53,12 @@ export function TomorrowSection({
     return {
       key: k,
       icon: rep?.weather[0].icon,
-      temp: rep ? Math.round(rep.temp) : null,
+      temp: rep ? Math.round(toDisplayTemp(rep.temp, settings.temp)) : null,
     };
   });
 
-  const dayPop = tomorrowHours.length
-    ? Math.round(avg(tomorrowHours.map((h) => h.pop)) * 100)
-    : 0;
-  const dayWind = tomorrowHours.length
-    ? msToKmh(avg(tomorrowHours.map((h) => h.wind_speed)))
-    : 0;
+  const dayPop = tomorrowHours.length ? Math.round(avg(tomorrowHours.map((h) => h.pop)) * 100) : 0;
+  const dayWind = tomorrowHours.length ? msToKmh(avg(tomorrowHours.map((h) => h.wind_speed))) : 0;
 
   return (
     <section className="px-5">

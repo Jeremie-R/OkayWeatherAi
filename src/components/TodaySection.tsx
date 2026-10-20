@@ -13,11 +13,22 @@ import { WindChip } from "./WindChip";
 import type { OneCallResponse } from "@/lib/owm";
 import { buildCtx, pickQuote } from "@/lib/quotes";
 import { localHour, msToKmh } from "@/lib/weather";
+import { useSettings } from "@/hooks/use-settings";
+import { formatHour, formatTemp, toDisplayTemp } from "@/lib/units";
 import { buildUpcomingRain } from "@/lib/upcomingRain";
 import { UpcomingRainChart } from "./UpcomingRainSection";
 import { SunArc } from "./SunMoonSection";
 
-export function TodaySection({ data, locName, onOpenDay }: { data: OneCallResponse; locName: string; onOpenDay?: () => void }) {
+export function TodaySection({
+  data,
+  locName,
+  onOpenDay,
+}: {
+  data: OneCallResponse;
+  locName: string;
+  onOpenDay?: () => void;
+}) {
+  const { settings } = useSettings();
   const { current, hourly, timezone_offset } = data;
   const windKmh = msToKmh(current.wind_speed);
   const ctx = buildCtx({
@@ -31,13 +42,15 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
   const quote = pickQuote(ctx);
 
   const slice = hourly.slice(0, 8);
-  const temps = slice.map((h) => Math.round(h.temp));
+  // The chart plots display units so the axis and labels agree with the
+  // headline temperature; the quote context above stays in °C.
+  const temps = slice.map((h) => Math.round(toDisplayTemp(h.temp, settings.temp)));
   const tMin = Math.min(...temps);
   const tMax = Math.max(...temps);
   const minIdx = temps.indexOf(tMin);
   const maxIdx = temps.indexOf(tMax);
   const chartData = slice.map((h, i) => ({
-    hour: `${localHour(h.dt, timezone_offset).toString().padStart(2, "0")}h`,
+    hour: formatHour(localHour(h.dt, timezone_offset), settings.clock),
     temp: temps[i],
     rain: +(h.rain?.["1h"] ?? 0).toFixed(2),
     label: i === minIdx ? `${tMin}°` : i === maxIdx ? `${tMax}°` : "",
@@ -66,11 +79,11 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
             </p>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-6xl font-semibold tracking-tight tabular-nums">
-                {Math.round(current.temp)}°
+                {formatTemp(current.temp, settings.temp)}
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Feels like {Math.round(current.feels_like)}° · {current.weather[0].main}
+              Feels like {formatTemp(current.feels_like, settings.temp)} · {current.weather[0].main}
             </p>
           </div>
           <WeatherIcon code={current.weather[0].icon} size={88} />
@@ -118,8 +131,18 @@ export function TodaySection({ data, locName, onOpenDay }: { data: OneCallRespon
                 dataKey="temp"
                 stroke="var(--chart-temp)"
                 strokeWidth={2.5}
-                dot={{ r: 3.5, fill: "var(--background)", stroke: "var(--chart-temp)", strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "var(--background)", stroke: "var(--chart-temp)", strokeWidth: 2 }}
+                dot={{
+                  r: 3.5,
+                  fill: "var(--background)",
+                  stroke: "var(--chart-temp)",
+                  strokeWidth: 2,
+                }}
+                activeDot={{
+                  r: 5,
+                  fill: "var(--background)",
+                  stroke: "var(--chart-temp)",
+                  strokeWidth: 2,
+                }}
               >
                 <LabelList
                   dataKey="label"

@@ -20,7 +20,10 @@ export const Route = createFileRoute("/_tabs/")({
       { title: "OkayWeather — Honest forecasts" },
       { name: "description", content: "A simple, modern weather app with a sense of humor." },
       { property: "og:title", content: "OkayWeather" },
-      { property: "og:description", content: "A simple, modern weather app with a sense of humor." },
+      {
+        property: "og:description",
+        content: "A simple, modern weather app with a sense of humor.",
+      },
     ],
   }),
   component: Index,
@@ -91,10 +94,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[480px]">
-        <Header
-          name={`${location.name}, Today`}
-          onClick={() => setSheetOpen(true)}
-        />
+        <Header name={`${location.name}, Today`} onClick={() => setSheetOpen(true)} />
 
         {query.isLoading && <LoadingState />}
         {query.isError && (
@@ -103,7 +103,11 @@ function Index() {
         {query.data && (
           <div className="space-y-5 pb-10">
             <AlertRail alerts={query.data.owm.alerts} onOpen={() => setAlertsOpen(true)} />
-            <TodaySection data={query.data.owm} locName={location.name} onOpenDay={() => setOpenDay(0)} />
+            <TodaySection
+              data={query.data.owm}
+              locName={location.name}
+              onOpenDay={() => setOpenDay(0)}
+            />
             <TomorrowSection data={query.data.owm} onOpenDetails={(i) => setOpenDay(i)} />
             <TenDaySection data={query.data.owm} onOpenDay={(i) => setOpenDay(i)} />
           </div>

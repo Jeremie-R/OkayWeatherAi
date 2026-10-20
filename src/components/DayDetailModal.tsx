@@ -13,6 +13,8 @@ import {
   Cell,
 } from "recharts";
 import { WeatherIcon } from "./WeatherIcon";
+import { useSettings } from "@/hooks/use-settings";
+import { formatHour, formatTemp, formatWind, toDisplayTemp } from "@/lib/units";
 import { SunMoonCard } from "./SunMoonSection";
 import type { OneCallResponse } from "@/lib/owm";
 import type { OmHourly } from "@/lib/openmeteo";
@@ -49,7 +51,11 @@ function modeIcon(hours: OmHourly[]): string {
   }
   let best = hours[0]?.icon ?? "01d";
   let bestN = 0;
-  for (const [k, v] of counts) if (v > bestN) { best = k; bestN = v; }
+  for (const [k, v] of counts)
+    if (v > bestN) {
+      best = k;
+      bestN = v;
+    }
   return best;
 }
 
@@ -88,6 +94,7 @@ export function DayDetailModal({
   onClose: () => void;
   onChangeDay?: (dayIndex: number) => void;
 }) {
+  const { settings } = useSettings();
   const open = data != null && dayIndex != null;
   const [dragX, setDragX] = useState(0);
   const [animate, setAnimate] = useState(false);
@@ -98,36 +105,33 @@ export function DayDetailModal({
   const width = () => (typeof window !== "undefined" ? window.innerWidth : 400);
 
   // Slide the page fully off-screen, swap the day, then slide the new day in.
-  const slideTo = useCallback(
-    (dir: -1 | 1, action: () => void, incoming = true) => {
-      if (busy.current) return;
-      busy.current = true;
-      const w = width();
-      setAnimate(true);
-      setDragX(dir * w);
-      window.setTimeout(() => {
-        action();
-        if (!incoming) {
-          busy.current = false;
-          setAnimate(false);
-          setDragX(0);
-          return;
-        }
+  const slideTo = useCallback((dir: -1 | 1, action: () => void, incoming = true) => {
+    if (busy.current) return;
+    busy.current = true;
+    const w = width();
+    setAnimate(true);
+    setDragX(dir * w);
+    window.setTimeout(() => {
+      action();
+      if (!incoming) {
+        busy.current = false;
         setAnimate(false);
-        setDragX(-dir * w);
+        setDragX(0);
+        return;
+      }
+      setAnimate(false);
+      setDragX(-dir * w);
+      requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setAnimate(true);
-            setDragX(0);
-            window.setTimeout(() => {
-              busy.current = false;
-            }, 260);
-          });
+          setAnimate(true);
+          setDragX(0);
+          window.setTimeout(() => {
+            busy.current = false;
+          }, 260);
         });
-      }, 240);
-    },
-    [],
-  );
+      });
+    }, 240);
+  }, []);
 
   const goPrev = useCallback(() => {
     if (dayIndex == null) return;
@@ -143,7 +147,6 @@ export function DayDetailModal({
       setDragX(0);
     }
   }, [dayIndex, maxDay, onChangeDay, slideTo]);
-
 
   useEffect(() => {
     if (!open) return;
@@ -203,8 +206,6 @@ export function DayDetailModal({
     setDragX(0);
   }
 
-
-
   if (!open) return null;
 
   const day = data!.daily[dayIndex!];
@@ -230,18 +231,27 @@ export function DayDetailModal({
 
   const buckets = bucketHours(hours);
   const haveHourly = hours.length > 0;
-  const upcomingRain =
-    dayIndex === 0 ? buildUpcomingRain(data!.minutely, data!.current.dt) : null;
+  const upcomingRain = dayIndex === 0 ? buildUpcomingRain(data!.minutely, data!.current.dt) : null;
   const chartData = buckets.map((b) => {
     const hrs = b.hours;
-    const lab = `${b.start.toString().padStart(2, "0")}`;
+    const lab = formatHour(b.start, settings.clock);
     if (!hrs.length) {
-      return { hour: lab, temp: null, rain: 0, pop: 0, wind: 0, icon: "", windDeg: null as number | null };
+      return {
+        hour: lab,
+        temp: null,
+        rain: 0,
+        pop: 0,
+        wind: 0,
+        icon: "",
+        windDeg: null as number | null,
+      };
     }
     return {
       hour: lab,
-      temp: Math.round(hrs.reduce((s, h) => s + h.tempC, 0) / hrs.length),
-      rain: +(hrs.reduce((s, h) => s + h.precipMm, 0)).toFixed(2),
+      temp: Math.round(
+        toDisplayTemp(hrs.reduce((s, h) => s + h.tempC, 0) / hrs.length, settings.temp),
+      ),
+      rain: +hrs.reduce((s, h) => s + h.precipMm, 0).toFixed(2),
       pop: Math.round(hrs.reduce((s, h) => s + h.popPct, 0) / hrs.length),
       wind: Math.round(hrs.reduce((s, h) => s + h.windKmh, 0) / hrs.length),
       icon: modeIcon(hrs),
@@ -253,9 +263,7 @@ export function DayDetailModal({
 
   // Wind day-level tier from mean of bucketed winds
   const dayMeanWind =
-    chartData.length > 0
-      ? chartData.reduce((s, d) => s + d.wind, 0) / chartData.length
-      : windKmh;
+    chartData.length > 0 ? chartData.reduce((s, d) => s + d.wind, 0) / chartData.length : windKmh;
   const dayWindTier = windTier(dayMeanWind);
   const windTitle = windTierTitle(dayWindTier);
 
@@ -286,9 +294,7 @@ export function DayDetailModal({
         transition: animate ? "transform 240ms cubic-bezier(0.22,0.61,0.36,1)" : "none",
         willChange: "transform",
       }}
-
     >
-
       <div className="mx-auto max-w-[480px] pb-12">
         <header className="sticky top-0 z-10 flex items-center gap-2 bg-background/90 backdrop-blur px-3 pt-4 pb-3 border-b border-border/60">
           <button
@@ -313,14 +319,14 @@ export function DayDetailModal({
                 </p>
                 <div className="mt-1 flex items-baseline gap-2 tabular-nums">
                   <span className="text-5xl font-semibold tracking-tight">
-                    {Math.round(day.temp.max)}°
+                    {formatTemp(day.temp.max, settings.temp)}
                   </span>
                   <span className="text-2xl text-muted-foreground">
-                    / {Math.round(day.temp.min)}°
+                    / {formatTemp(day.temp.min, settings.temp)}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Feels {Math.round(day.feels_like.day)}° at midday
+                  Feels {formatTemp(day.feels_like.day, settings.temp)} at midday
                 </p>
               </div>
               <WeatherIcon code={day.weather[0].icon} size={88} />
@@ -357,9 +363,13 @@ export function DayDetailModal({
                   <>
                     <div className="mt-1 flex items-center justify-between">
                       <WeatherIcon code={p.v.icon} size={36} />
-                      <span className="text-xl font-semibold tabular-nums">{p.v.temp}°</span>
+                      <span className="text-xl font-semibold tabular-nums">
+                        {formatTemp(p.v.temp, settings.temp)}
+                      </span>
                     </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">Feels {p.v.feels}°</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Feels {formatTemp(p.v.feels, settings.temp)}
+                    </p>
                   </>
                 ) : (
                   <p className="mt-3 text-xs text-muted-foreground">—</p>
@@ -385,7 +395,11 @@ export function DayDetailModal({
                     />
                     <YAxis hide domain={["dataMin - 2", "dataMax + 2"]} />
                     <Tooltip
-                      contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }}
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid var(--border)",
+                        fontSize: 12,
+                      }}
                       formatter={(v: number) => [`${v}°`, "Temp"]}
                     />
                     <Line
@@ -393,7 +407,12 @@ export function DayDetailModal({
                       dataKey="temp"
                       stroke="var(--chart-temp)"
                       strokeWidth={2.5}
-                      dot={{ r: 3, fill: "var(--background)", stroke: "var(--chart-temp)", strokeWidth: 2 }}
+                      dot={{
+                        r: 3,
+                        fill: "var(--background)",
+                        stroke: "var(--chart-temp)",
+                        strokeWidth: 2,
+                      }}
                     >
                       <LabelList
                         dataKey="temp"
@@ -410,47 +429,53 @@ export function DayDetailModal({
               <div className="grid grid-cols-12 -mt-1 px-1">
                 {chartData.map((d, i) => (
                   <div key={i} className="flex justify-center">
-                    {d.icon ? <WeatherIcon code={d.icon} size={18} /> : <span className="h-[18px]" />}
+                    {d.icon ? (
+                      <WeatherIcon code={d.icon} size={18} />
+                    ) : (
+                      <span className="h-[18px]" />
+                    )}
                   </div>
                 ))}
               </div>
             </ChartCard>
 
             {hasRain && (
-            <ChartCard title="Rain">
-              <div className="h-36 -mx-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
-                    <XAxis
-                      dataKey="hour"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                      interval={1}
-                    />
-                    <YAxis hide domain={[0, "dataMax + 0.5"]} />
-                    <Tooltip
-                      contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }}
-                      formatter={(v: number, _n, p) => [
-                        `${v} mm · ${p.payload.pop}%`, "Rain",
-                      ]}
-                    />
-                    <Bar dataKey="rain" radius={[6, 6, 0, 0]}>
-                      {chartData.map((d, i) => (
-                        <Cell
-                          key={i}
-                          fill="var(--chart-rain)"
-                          opacity={d.pop >= 25 ? 0.9 : 0.3}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="px-2 pt-1 text-[10px] text-muted-foreground">
-                Lighter bars = below 25% chance.
-              </p>
-            </ChartCard>
+              <ChartCard title="Rain">
+                <div className="h-36 -mx-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
+                      <XAxis
+                        dataKey="hour"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                        interval={1}
+                      />
+                      <YAxis hide domain={[0, "dataMax + 0.5"]} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: 12,
+                          border: "1px solid var(--border)",
+                          fontSize: 12,
+                        }}
+                        formatter={(v: number, _n, p) => [`${v} mm · ${p.payload.pop}%`, "Rain"]}
+                      />
+                      <Bar dataKey="rain" radius={[6, 6, 0, 0]}>
+                        {chartData.map((d, i) => (
+                          <Cell
+                            key={i}
+                            fill="var(--chart-rain)"
+                            opacity={d.pop >= 25 ? 0.9 : 0.3}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="px-2 pt-1 text-[10px] text-muted-foreground">
+                  Lighter bars = below 25% chance.
+                </p>
+              </ChartCard>
             )}
 
             <ChartCard title={windTitle}>
@@ -466,11 +491,15 @@ export function DayDetailModal({
                     />
                     <YAxis hide domain={[0, "dataMax + 2"]} />
                     <Tooltip
-                      contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }}
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid var(--border)",
+                        fontSize: 12,
+                      }}
                       formatter={(v: number, _n, p) => {
                         const deg = (p?.payload as { windDeg: number | null })?.windDeg;
                         const dir = deg != null ? ` · ${cardinalFromDeg(deg)}` : "";
-                        return [`${v} km/h${dir}`, "Wind"];
+                        return [`${formatWind(v, settings.wind)}${dir}`, "Wind"];
                       }}
                     />
                     <Bar dataKey="wind" radius={[6, 6, 0, 0]}>
@@ -491,7 +520,9 @@ export function DayDetailModal({
                           className="h-3 w-3"
                           style={{ transform: `rotate(${d.windDeg}deg)` }}
                         />
-                        <span className="text-[9px] leading-tight">{cardinalFromDeg(d.windDeg)}</span>
+                        <span className="text-[9px] leading-tight">
+                          {cardinalFromDeg(d.windDeg)}
+                        </span>
                       </>
                     ) : (
                       <span className="h-3 w-3" />

@@ -11,7 +11,8 @@ interface BeforeInstallPromptEvent extends Event {
 function detectPlatform(): Platform {
   if (typeof navigator === "undefined") return null;
   const ua = navigator.userAgent;
-  const isIOS = /iPhone|iPad|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
+  const isIOS =
+    /iPhone|iPad|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
   if (isIOS) {
     // Only Safari on iOS supports Add to Home Screen
     const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
@@ -24,7 +25,8 @@ function detectPlatform(): Platform {
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   const mql = window.matchMedia?.("(display-mode: standalone)").matches;
-  const iosStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+  const iosStandalone =
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true;
   return Boolean(mql || iosStandalone);
 }
 
@@ -69,7 +71,8 @@ export function InstallHint() {
       {platform === "ios" ? (
         <p>
           Add <span className="font-medium">Okay weather</span> to your Home Screen: tap{" "}
-          <Share className="inline h-3 w-3 -translate-y-px" aria-label="Share" /> in Safari, then choose “Add to Home Screen”.
+          <Share className="inline h-3 w-3 -translate-y-px" aria-label="Share" /> in Safari, then
+          choose “Add to Home Screen”.
         </p>
       ) : deferred ? (
         <button
@@ -81,7 +84,8 @@ export function InstallHint() {
         </button>
       ) : (
         <p>
-          Add <span className="font-medium">Okay weather</span> to your Home Screen from your browser menu for a full‑screen app.
+          Add <span className="font-medium">Okay weather</span> to your Home Screen from your
+          browser menu for a full‑screen app.
         </p>
       )}
     </div>
