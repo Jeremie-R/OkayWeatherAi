@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -16,7 +17,7 @@ import {
   type Settings,
 } from "@/lib/settings";
 import { applyMaterialPalette, clearMaterialPalette } from "@/lib/materialyou";
-import { getMaterialYouPalette } from "@/lib/native";
+import { getMaterialYouPalette, setWidgetConfig } from "@/lib/native";
 import { paletteFromSeed } from "@/lib/palette";
 import { WALLPAPER } from "@/lib/settings";
 
@@ -80,6 +81,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [settings.style, settings.materialColor, settings.theme, hydrated]);
+
+  // The home-screen widget draws the same icons as the app, so push the pack
+  // across whenever it changes. Skipped on the first render after hydration —
+  // the native side already has the stored value, and writing it would kick
+  // off a redundant refresh every time the app opens.
+  const lastPushedPack = useRef<string | null>(null);
+  useEffect(() => {
+    if (!hydrated) return;
+    if (lastPushedPack.current === null) {
+      lastPushedPack.current = settings.iconPack;
+      return;
+    }
+    if (lastPushedPack.current === settings.iconPack) return;
+    lastPushedPack.current = settings.iconPack;
+    void setWidgetConfig({ iconPack: settings.iconPack });
+  }, [settings.iconPack, hydrated]);
 
   // Follow the OS while the theme is set to "system".
   useEffect(() => {

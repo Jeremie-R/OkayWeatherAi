@@ -16,12 +16,15 @@ export interface WidgetConfig {
   refreshIntervalMinutes: number;
   useDeviceLocation: boolean;
   placeName: string | null;
+  /** Mirrors the app's icon pack. */
+  iconPack: string;
   /** False when no widget is on a home screen yet. */
   hasWidget: boolean;
 }
 
 export interface WidgetConfigUpdate {
   refreshIntervalMinutes?: number;
+  iconPack?: string;
   useDeviceLocation?: boolean;
   lat?: number;
   lon?: number;

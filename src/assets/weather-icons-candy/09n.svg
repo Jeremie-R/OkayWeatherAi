@@ -10,8 +10,8 @@
 <path d="M16.1731 5.56537L14.9806 5.80388C14.7662 5.84676 14.7662 6.15324 14.9806 6.19612L16.1731 6.43463C16.3711 6.47421 16.5258 6.62893 16.5654 6.82686L16.8039 8.01942C16.8468 8.23379 17.1532 8.23379 17.1961 8.01942L17.4346 6.82686C17.4742 6.62893 17.6289 6.47421 17.8269 6.43463L19.0194 6.19612C19.2338 6.15324 19.2338 5.84676 19.0194 5.80388L17.8269 5.56537C17.6289 5.52579 17.4742 5.37107 17.4346 5.17314L17.1961 3.98058C17.1532 3.76621 16.8468 3.76621 16.8039 3.98058L16.5654 5.17314C16.5258 5.37107 16.3711 5.52579 16.1731 5.56537Z" fill="#FFF627"/>
 <defs>
 <radialGradient id="paint0_radial_3327_96598" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(12 20) rotate(-90) scale(16 17.8985)">
-<stop stop-color="#3A3848"/>
-<stop offset="1" stop-color="#605E78"/>
+<stop stop-color="#113DB5"/>
+<stop offset="1" stop-color="#5E52EC"/>
 </radialGradient>
 <radialGradient id="paint1_radial_3327_96598" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(12 23) rotate(-90) scale(7 10.4408)">
 <stop stop-color="#5A81FB"/>

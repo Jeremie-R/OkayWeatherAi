@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.ColorFilter
@@ -48,9 +49,11 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import com.roberrini.okayweather.MainActivity
 import com.roberrini.okayweather.R
+import com.roberrini.okayweather.weather.IconPack
 import com.roberrini.okayweather.weather.UpcomingRain
 import com.roberrini.okayweather.weather.WeatherSnapshot
 import com.roberrini.okayweather.weather.WeatherStore
+import com.roberrini.okayweather.weather.WidgetSettings
 import kotlin.math.roundToInt
 
 /**
@@ -83,6 +86,13 @@ class WeatherWidget : GlanceAppWidget() {
                 if (prefs[SNAPSHOT_KEY] == null) prefs[SNAPSHOT_KEY] = cached.toJson()
             }
         }
+        // Seed the icon pack the same way as the snapshot. Reading it here
+        // into a local would capture it for the whole session: updateAll()
+        // recomposes but does not re-run provideGlance, so a pack change
+        // wouldn't show until the session restarted.
+        updateAppWidgetState(context, id) { prefs ->
+            prefs[PACK_KEY] = WidgetSettings.iconPack(context).id
+        }
         provideContent {
             // No explicit colors = Material You dynamic colors (Android 12+).
             GlanceTheme {
@@ -93,13 +103,31 @@ class WeatherWidget : GlanceAppWidget() {
 
     companion object {
         val SNAPSHOT_KEY = stringPreferencesKey("snapshot")
+        val PACK_KEY = stringPreferencesKey("iconPack")
 
         /** Push [snapshot] into every placed widget's state and re-render them. */
         suspend fun publish(context: Context, snapshot: WeatherSnapshot) {
             val json = snapshot.toJson()
+            write(context) { prefs -> prefs[SNAPSHOT_KEY] = json }
+        }
+
+        /**
+         * Re-render after a preference change that isn't weather data — the
+         * icon pack today. Separate from [publish] so switching packs shows
+         * immediately instead of waiting on a successful fetch.
+         */
+        suspend fun refreshAppearance(context: Context) {
+            val pack = WidgetSettings.iconPack(context).id
+            write(context) { prefs -> prefs[PACK_KEY] = pack }
+        }
+
+        private suspend fun write(
+            context: Context,
+            block: (MutablePreferences) -> Unit,
+        ) {
             val manager = GlanceAppWidgetManager(context)
             manager.getGlanceIds(WeatherWidget::class.java).forEach { id ->
-                updateAppWidgetState(context, id) { prefs -> prefs[SNAPSHOT_KEY] = json }
+                updateAppWidgetState(context, id, block)
             }
             WeatherWidget().updateAll(context)
         }
@@ -108,13 +136,15 @@ class WeatherWidget : GlanceAppWidget() {
 
 @Composable
 private fun WeatherWidgetContent() {
-    val snapshot = currentState<Preferences>()[WeatherWidget.SNAPSHOT_KEY]?.let(WeatherSnapshot::fromJson)
+    val state = currentState<Preferences>()
+    val snapshot = state[WeatherWidget.SNAPSHOT_KEY]?.let(WeatherSnapshot::fromJson)
+    val pack = IconPack.from(state[WeatherWidget.PACK_KEY])
     val openApp = actionStartActivity<MainActivity>()
     val rain = snapshot?.upcomingRain()
     if (snapshot != null && rain != null && rain.hasRain) {
-        RainCard(snapshot, rain, openApp)
+        RainCard(snapshot, rain, openApp, pack)
     } else {
-        TemperaturePill(snapshot, openApp)
+        TemperaturePill(snapshot, openApp, pack)
     }
 }
 
@@ -133,7 +163,7 @@ private const val ICON_TOP = 0.38f
 private const val ICON_SIZE = 0.42f
 
 @Composable
-private fun TemperaturePill(snapshot: WeatherSnapshot?, onClick: Action) {
+private fun TemperaturePill(snapshot: WeatherSnapshot?, onClick: Action, pack: IconPack) {
     val context = LocalContext.current
     val cell = LocalSize.current
     val s = min(cell.width, cell.height)
@@ -184,7 +214,7 @@ private fun TemperaturePill(snapshot: WeatherSnapshot?, onClick: Action) {
         }
         Box(modifier = GlanceModifier.padding(start = ox + s * ICON_LEFT, top = oy + s * ICON_TOP)) {
             Image(
-                provider = ImageProvider(WeatherIcons.drawableFor(snapshot?.icon)),
+                provider = ImageProvider(WeatherIcons.drawableFor(pack, snapshot?.icon)),
                 contentDescription = snapshot?.condition ?: context.getString(R.string.widget_no_data),
                 modifier = GlanceModifier.size(s * ICON_SIZE),
             )
@@ -199,7 +229,12 @@ private val CARD_SUMMARY_HEIGHT = 34.dp
 private val CARD_GAP = 6.dp
 
 @Composable
-private fun RainCard(snapshot: WeatherSnapshot, rain: UpcomingRain, onClick: Action) {
+private fun RainCard(
+    snapshot: WeatherSnapshot,
+    rain: UpcomingRain,
+    onClick: Action,
+    pack: IconPack,
+) {
     val context = LocalContext.current
     val cell = LocalSize.current
     val onSurface = GlanceTheme.colors.onSurface
@@ -231,7 +266,7 @@ private fun RainCard(snapshot: WeatherSnapshot, rain: UpcomingRain, onClick: Act
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
-                    provider = ImageProvider(WeatherIcons.drawableFor(snapshot.icon)),
+                    provider = ImageProvider(WeatherIcons.drawableFor(pack, snapshot.icon)),
                     contentDescription = snapshot.condition,
                     modifier = GlanceModifier.size(CARD_ICON),
                 )

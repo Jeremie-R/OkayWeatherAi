@@ -23,8 +23,8 @@
 <stop offset="1" stop-color="#62D9F8"/>
 </radialGradient>
 <radialGradient id="paint4_radial_3327_96605" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(12 20) rotate(-90) scale(16 17.8985)">
-<stop stop-color="#3A3848"/>
-<stop offset="1" stop-color="#605E78"/>
+<stop stop-color="#113DB5"/>
+<stop offset="1" stop-color="#5E52EC"/>
 </radialGradient>
 </defs>
 </svg>

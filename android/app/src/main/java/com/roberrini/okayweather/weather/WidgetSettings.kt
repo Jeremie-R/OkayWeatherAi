@@ -14,6 +14,7 @@ object WidgetSettings {
     private const val KEY_PLACE_NAME = "placeName"
     private const val KEY_LAT = "placeLat"
     private const val KEY_LON = "placeLon"
+    private const val KEY_ICON_PACK = "iconPack"
 
     /** Keep in sync with the Settings screen's options. */
     val INTERVAL_CHOICES = listOf(15L, 30L, 60L, 180L)
@@ -31,6 +32,14 @@ object WidgetSettings {
     fun setRefreshIntervalMinutes(context: Context, minutes: Long) {
         val safe = if (minutes in INTERVAL_CHOICES) minutes else DEFAULT_INTERVAL_MINUTES
         prefs(context).edit().putLong(KEY_INTERVAL, safe).apply()
+    }
+
+    /** Icon set, mirroring the app's own choice. */
+    fun iconPack(context: Context): IconPack =
+        IconPack.from(prefs(context).getString(KEY_ICON_PACK, null))
+
+    fun setIconPack(context: Context, id: String) {
+        prefs(context).edit().putString(KEY_ICON_PACK, IconPack.from(id).id).apply()
     }
 
     /**

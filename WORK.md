@@ -56,7 +56,7 @@ Kotlin lives in `android/app/src/main/java/com/roberrini/okayweather/`:
 | --- | --- |
 | `widget/WeatherWidget.kt` | The two looks. **Pill**: a 45° capsule (`res/drawable/widget_pill_45.xml`, tinted `GlanceTheme.colors.surface`) with the condition icon on the bottom-left lobe and the temperature on the top-right one; positions are fractions of the square the pill is fitted into (`TEMP_*` / `ICON_*` constants). **Rain card**: when `upcomingRain().hasRain` — the exact rule of the app's "Upcoming rain" section — a rounded square with icon + temperature, the same summary string as the app, and a bitmap area chart of the next hour. |
 | `widget/RainChart.kt` | Canvas renderer for that chart (monotone curve, gradient fill, `now/+15/…/+60` axis), mirrors `UpcomingRainChart` in `src/components/UpcomingRainSection.tsx`. |
-| `widget/WeatherIcons.kt` | OWM icon code → `res/drawable/wi_*.xml`. Those 18 vectors are **generated** from `src/assets/weather-icons-modern/*.svg` (paths + linear gradients only). Regenerate them if the SVGs change — the conversion is a ~40-line Python script over ElementTree; keep the same file names. The widget always uses the modern set: candy needs radial gradients and `<use>`, classic needs `<circle>`/`<rect>`/`<polygon>` and CSS classes, none of which the converter handles yet. |
+| `widget/WeatherIcons.kt` | (pack, OWM icon code) → `res/drawable/wi_<pack>_<code>.xml`. All 54 vectors are **generated** — see below. |
 | `widget/WeatherWidgetReceiver.kt` | Starts/stops the refresh schedule with the first/last widget instance. |
 | `weather/UpcomingRain.kt` | Port of `src/lib/upcomingRain.ts`. **Keep in sync** with the TS file. |
 | `weather/WeatherApi.kt` | OWM One Call 3.0 (`current` + `minutely`, metric), same public key as `src/lib/owm.ts`. |
@@ -82,6 +82,36 @@ purples. Force pure white/black with a `ColorProvider(day, night)` if wanted.
 Verified on the `Pixel_10_Pro` AVD: pill and rain card with live OWM data
 (Amsterdam in heavy rain flipped it to the card; a mocked LA/Dubai location
 showed the pill), light and dark mode, tap opens the app, picker preview.
+
+### Regenerating the widget's icons
+
+The widget can't load SVGs, so every icon exists as a VectorDrawable. After
+changing anything under `src/assets/weather-icons-*`, run:
+
+```bash
+python3 tools/svg_to_vector.py
+```
+
+It rewrites all 54 drawables and handles what the three packs actually use:
+paths, circles, rects, polygons, `<use>`, CSS-class fills from `<style>`,
+`<g>` nesting, and gradients that inherit through `xlink:href`.
+
+Two things worth knowing about it:
+
+- **Radial gradients are approximated.** SVG gradients carry a transform and
+  can be ellipses; Android's `<gradient>` only has a centre and one radius.
+  The radius used is `r * sqrt(|det A|)`, which preserves the gradient's
+  area. Invisible at icon size on a two-stop shade.
+- **Duplicate stops are dropped.** Figma and Illustrator both emit a trailing
+  `<stop offset="1"/>` with no colour. SVG treats that as black at exactly
+  the end point, so it never shows on the web — but Android blends into it
+  and the ramp ends black.
+
+The widget follows the app's icon pack: the Settings screen pushes it through
+the plugin, which stores it and re-renders. The pack has to travel in Glance
+*state*, not a value read in `provideGlance` — `updateAll()` recomposes but
+does not re-run `provideGlance`, so a captured value never changes until the
+session restarts. Same trap as the weather snapshot.
 
 ### Location on the emulator (for testing)
 ```bash
@@ -173,9 +203,8 @@ the app and the widget agree.
 - `SizeMode.Responsive` variants if you ever allow other cell sizes.
 - Show the app's "feels like" / condition text under the temperature on the
   pill for a 3×2 variant.
-- Let the widget follow the app's icon pack. Needs the converter extended to
-  radial gradients and `<use>` (candy) and to shapes plus `<style>` classes
-  (classic), then a pack prefix on the drawable names.
+- The widget formats its observation time with the device's 12/24-hour
+  setting, while the app has its own Clock preference. They can disagree.
 
 ### 4. Release
 - Follow Sundial: `keystore.properties` (gitignored) + `signingConfigs` in

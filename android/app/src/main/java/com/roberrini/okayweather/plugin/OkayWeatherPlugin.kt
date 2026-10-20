@@ -8,6 +8,11 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.roberrini.okayweather.weather.WeatherAlarm
 import com.roberrini.okayweather.weather.WeatherRefresh
 import com.roberrini.okayweather.weather.WidgetSettings
+import com.roberrini.okayweather.widget.WeatherWidget
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * The web app's window onto the things only the native shell knows:
@@ -18,6 +23,9 @@ import com.roberrini.okayweather.weather.WidgetSettings
  */
 @CapacitorPlugin(name = "OkayWeatherNative")
 class OkayWeatherPlugin : Plugin() {
+
+    // Glance's state writes are suspending, and plugin methods are not.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /** `{ available: boolean, colors?: { accent1_600: "#...", ... } }` */
     @PluginMethod
@@ -39,6 +47,7 @@ class OkayWeatherPlugin : Plugin() {
                 .put("refreshIntervalMinutes", WidgetSettings.refreshIntervalMinutes(context))
                 .put("useDeviceLocation", WidgetSettings.useDeviceLocation(context))
                 .put("placeName", WidgetSettings.placeName(context))
+                .put("iconPack", WidgetSettings.iconPack(context).id)
                 .put("hasWidget", WeatherAlarm.hasWidgets(context)),
         )
     }
@@ -55,6 +64,12 @@ class OkayWeatherPlugin : Plugin() {
         }
         // A pinned place needs all three values; anything else means "follow
         // the device", which is also what clears a previously pinned place.
+        call.getString("iconPack")?.let {
+            WidgetSettings.setIconPack(context, it)
+            // Doesn't depend on the network, so don't make it wait for a fetch.
+            scope.launch { WeatherWidget.refreshAppearance(context) }
+        }
+
         val useDevice = call.getBoolean("useDeviceLocation")
         val lat = call.getDouble("lat")
         val lon = call.getDouble("lon")

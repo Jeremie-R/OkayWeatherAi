@@ -146,6 +146,11 @@ function SettingsPage() {
                 );
               })}
             </div>
+            {native && (
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                The home-screen widget uses the same set.
+              </p>
+            )}
           </Section>
 
           <Section title="Units">
