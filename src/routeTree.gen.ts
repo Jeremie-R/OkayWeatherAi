@@ -9,18 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TabsRouteImport } from './routes/_tabs'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TabsIndexRouteImport } from './routes/_tabs.index'
 import { Route as TabsMapRouteImport } from './routes/_tabs.map'
 
+const TabsRoute = TabsRouteImport.update({
+  id: '/_tabs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TabsRoute = TabsRouteImport.update({
-  id: '/_tabs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TabsIndexRoute = TabsIndexRouteImport.update({
@@ -66,18 +66,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_tabs': {
       id: '/_tabs'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof TabsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_tabs/': {

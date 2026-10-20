@@ -134,3 +134,9 @@ WORK.md                  build notes, toolchain, and the traps worth knowing
 
 The web app is live. The Android app builds and runs; a Play Store listing is
 being prepared — `store/` holds the icon, feature graphic and screenshots for it.
+
+## License
+
+[MIT](LICENSE). The weather icon sets are the author's own work and are covered
+by the same licence; map and forecast data belong to the providers listed above
+and carry their own terms.
