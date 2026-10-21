@@ -210,6 +210,61 @@ the app and the widget agree.
 - Follow Sundial: `keystore.properties` (gitignored) + `signingConfigs` in
   `app/build.gradle`; `./gradlew assembleRelease`.
 
+## Release signing
+
+The Gradle wiring is in place; the key itself is not, and deliberately so.
+`android/keystore.properties` and any `*.jks` are gitignored, and a release
+build without them still succeeds — it just comes out unsigned. So a fresh
+clone works, and the key never lives in the repo.
+
+**One-time setup.** Create the key somewhere outside the repo:
+
+```bash
+keytool -genkeypair -v \
+  -keystore ~/keys/okayweather-upload.jks \
+  -alias okayweather-upload \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Then copy `android/keystore.properties.example` to
+`android/keystore.properties` and fill in the path, alias and the password
+you just chose.
+
+**Back that file up somewhere safe.** With Play App Signing (which Google
+enrols you in by default) this is the *upload* key, so losing it is
+recoverable — Google can reset it — but losing it without Play App Signing
+means you can never update the listing again.
+
+**Building.**
+
+```bash
+bun run android:release     # web bundle -> sync -> AAB for Play
+```
+
+The bundle lands at `android/app/build/outputs/bundle/release/app-release.aab`.
+Play wants the `.aab`; `./gradlew assembleRelease` produces an installable
+`.apk` instead, for sideloading or testing.
+
+Check what you built before uploading:
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+~/Library/Android/sdk/build-tools/36.0.0/apksigner verify --verbose \
+  android/app/build/outputs/apk/release/app-release.apk
+```
+
+A signed build reports `Verifies` and `APK Signature Scheme v2: true`.
+
+**Every upload needs a higher `versionCode`** than the last one Play accepted.
+It is `1` in `android/app/build.gradle` right now, alongside `versionName`,
+which is the string users see.
+
+**R8 is off** (`minifyEnabled = false`). The app's surface is a Capacitor
+WebView bridge plus Glance composables, both of which resolve classes
+reflectively, so shrinking needs its own test pass on a device before it can
+be trusted in a store build. Turning it on without that is how you ship a
+release that crashes only for users.
+
 ## Dependencies and hosting
 
 ### Don't upgrade @tanstack/react-start past 1.168.x yet

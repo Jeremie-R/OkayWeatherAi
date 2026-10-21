@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "build:android": "vite build --config vite.capacitor.config.ts && cap sync android",
     "android:open": "cap open android",
+    "android:release": "bun run build:android && cd android && ./gradlew bundleRelease",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

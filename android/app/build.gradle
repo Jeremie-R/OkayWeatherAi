@@ -1,8 +1,20 @@
+import java.util.Properties
+
 apply plugin: 'com.android.application'
 // Jetpack Glance widgets are @Composable, so the Kotlin Compose compiler is
 // required. AGP 9 compiles Kotlin itself (built-in Kotlin); this plugin only
 // adds the compiler plugin. Version pinned in the root build.gradle classpath.
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+// Release signing. keystore.properties lives next to this project, is
+// gitignored, and is absent on a fresh clone — so debug builds and anyone
+// cloning the repo keep working, and only release builds need it. Without it
+// a release build still succeeds, just unsigned. See WORK.md for setup.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
 
 android {
     namespace = "com.roberrini.okayweather"
@@ -23,10 +35,28 @@ android {
     buildFeatures {
         compose = true
     }
+    signingConfigs {
+        if (!keystoreProperties.isEmpty()) {
+            create('release') {
+                // storeFile may be absolute, or relative to the android/ dir.
+                storeFile = rootProject.file(keystoreProperties.getProperty('storeFile'))
+                storePassword = keystoreProperties.getProperty('storePassword')
+                keyAlias = keystoreProperties.getProperty('keyAlias')
+                keyPassword = keystoreProperties.getProperty('keyPassword')
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // R8 is left off deliberately: this app's surface is a Capacitor
+            // WebView bridge plus Glance composables, both of which resolve
+            // classes reflectively, so shrinking needs its own test pass
+            // before it can be trusted in a store build.
             minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // null when keystore.properties is absent -> unsigned release.
+            signingConfig = signingConfigs.findByName('release')
         }
     }
 }
