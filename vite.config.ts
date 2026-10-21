@@ -34,8 +34,7 @@ export default defineConfig({
           skipWaiting: true,
           runtimeCaching: [
             {
-              urlPattern: ({ request }: { request: Request }) =>
-                request.mode === "navigate",
+              urlPattern: ({ request }: { request: Request }) => request.mode === "navigate",
               handler: "NetworkFirst",
               options: {
                 cacheName: "html-pages",

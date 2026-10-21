@@ -268,7 +268,8 @@ const QUOTES: QuoteRule[] = [
 
 export function pickQuote(ctx: QuoteCtx): string {
   const matches = QUOTES.filter((q) => q.rule(ctx));
-  const pool = matches.length ? matches : QUOTES.filter((q) => q.rule === (() => true) || true);
+  // No rule matched the current conditions, so fall back to the whole set.
+  const pool = matches.length ? matches : QUOTES;
   const totalWeight = pool.reduce((s, q) => s + (q.weight ?? 1), 0);
   let n = Math.random() * totalWeight;
   let chosen = pool[0];

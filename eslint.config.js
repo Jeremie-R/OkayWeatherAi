@@ -6,7 +6,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  // android/ is a generated native project (Capacitor + Gradle build output);
+  // store/ and tools/ hold assets and Python helpers, not app source.
+  { ignores: ["dist", ".output", ".vinxi", "android", "store"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
