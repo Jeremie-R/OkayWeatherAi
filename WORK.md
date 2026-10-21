@@ -210,6 +210,55 @@ the app and the widget agree.
 - Follow Sundial: `keystore.properties` (gitignored) + `signingConfigs` in
   `app/build.gradle`; `./gradlew assembleRelease`.
 
+## Dependencies and hosting
+
+### Don't upgrade @tanstack/react-start past 1.168.x yet
+
+1.168.61 is pinned deliberately. It is the lowest version that clears
+GHSA-qx66-fv34-fjm8 (CVE-2026-102989, reflected XSS in server-function
+responses) — the advisory also covers `@tanstack/start-server-core` below
+1.169.39, and 1.168.61 pins 1.169.40.
+
+**1.169.x does not build here.** Its client environment resolves no entry, so
+rollup falls back to looking for an `index.html` this app doesn't have:
+
+```
+vite v7.3.2 building client environment for production...
+✓ 0 modules transformed.
+Could not resolve entry module "index.html".
+```
+
+That reproduces with a minimal Vite config (just `tanstackStart` + React +
+Tailwind + tsconfig-paths), so it is Start itself, not the Lovable wrapper —
+which is why the wrapper stays on 2.13.1. Retry 1.169+ only with a build.
+
+Two renames arrived with 1.168: `createServerFn().inputValidator()` is
+`.validator()` again, and `ErrorComponentProps.error` is `unknown`, not
+`Error`.
+
+`bunfig.toml`'s `minimumReleaseAge = 86400` is a supply-chain guard, not a
+nuisance. GHSA-g7cv-rxg3-hmpx put credential-stealing malware into a handful
+of `@tanstack/*` releases that were pulled within hours; nothing here was ever
+on an affected version. Leave it in place.
+
+### Where this is hosted
+
+As of 2026-10-21:
+
+| URL | Serves |
+| --- | --- |
+| `okay-weather-ai.vercel.app` | Vercel, auto-builds `main`, current |
+| `weather.app.roberrini.com` | points at `185.158.133.1` — **not** Vercel, serving a pre-Settings build |
+| `okayweatherai-roberrini.lovable.app` | Lovable's preview, also stale |
+
+The custom domain still resolves to Lovable's hosting, which froze when the
+project moved off Lovable. To make it track real work, add it as a custom
+domain on the Vercel project and repoint the A record.
+
+Keep only `main` on the remote. Merged branches left behind get rebuilt by
+Vercel at their old commits and fail the dependency security check forever,
+which is what the red crosses were.
+
 ## Lovable
 
 No longer in use — `src/` is edited directly here now. If it is ever
