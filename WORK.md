@@ -230,6 +230,26 @@ Then copy `android/keystore.properties.example` to
 `android/keystore.properties` and fill in the path, alias and the password
 you just chose.
 
+Keeping the key **outside the repo** is the real protection: a file that
+isn't in the working tree can't be committed at all, whatever happens to
+`.gitignore`. The example points at `~/keys/` for that reason.
+
+Two further layers, both already in place:
+
+- `android/.gitignore` ignores `keystore.properties`, `*.jks`, `*.keystore`
+  and `keystore/`. Only `keystore.properties.example` is tracked.
+- `tools/githooks/pre-commit` refuses any commit that stages a key, its
+  properties file, or a pasted `BEGIN ... PRIVATE KEY` block — covering the
+  cases `.gitignore` can't, like `git add -f` or someone editing the ignore
+  rules. It is wired up with `core.hooksPath`, so a fresh clone needs one
+  command to arm it:
+
+  ```bash
+  git config core.hooksPath tools/githooks
+  ```
+
+  `git commit --no-verify` bypasses it if you ever genuinely need to.
+
 **Back that file up somewhere safe.** With Play App Signing (which Google
 enrols you in by default) this is the *upload* key, so losing it is
 recoverable — Google can reset it — but losing it without Play App Signing

@@ -1,0 +1,38 @@
+#!/bin/sh
+# Refuse to commit Android signing material or private keys.
+#
+# .gitignore already keeps these out, but it can be overridden with
+# `git add -f` or quietly broken by an edit to the ignore file. This is the
+# backstop that fails loudly instead.
+#
+# Install:  git config core.hooksPath tools/githooks
+# (see WORK.md -> Release signing)
+
+fail() {
+    echo "pre-commit: refusing to commit signing material." >&2
+    echo "" >&2
+    echo "$1" >&2
+    echo "" >&2
+    echo "Keys belong outside the repo (see android/keystore.properties.example)." >&2
+    echo "If you are certain this is safe: git commit --no-verify" >&2
+    exit 1
+}
+
+# Staged files that look like a key or its passwords. *.example is fine —
+# it is the committed template and holds no secrets.
+keys=$(git diff --cached --name-only --diff-filter=AM \
+    | grep -iE '(^|/)keystore\.properties$|\.jks$|\.keystore$|\.p12$|\.pfx$' \
+    | grep -v '\.example$')
+
+if [ -n "$keys" ]; then
+    fail "Staged:
+$keys"
+fi
+
+# A private key pasted into any staged file, whatever it is called.
+if git diff --cached -U0 --diff-filter=AM \
+    | grep -qE '^\+.*-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----'; then
+    fail "A staged change adds a PRIVATE KEY block."
+fi
+
+exit 0
