@@ -31,6 +31,10 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "store/raw"
 OUT = ROOT / "store"
+# gplay syncs the Play listing from this tree (see WORK.md). The Play-spec
+# assets are written straight into it so there is exactly one copy of each;
+# store/ keeps the raw captures and the README thumbnails.
+META = ROOT / "metadata/en-US/images"
 
 FONT = "/System/Library/Fonts/Avenir Next.ttc"
 FACE_BOLD, FACE_DEMI, FACE_MEDIUM = 0, 2, 5
@@ -127,7 +131,7 @@ def centered_text(
     return y
 
 
-def build_screenshot(name: str, caption: str, crop: tuple | None) -> Path:
+def build_screenshot(index: int, name: str, caption: str, crop: tuple | None) -> Path:
     shot = Image.open(RAW / name).convert("RGB")
     if crop:
         shot = shot.crop(crop)
@@ -152,7 +156,8 @@ def build_screenshot(name: str, caption: str, crop: tuple | None) -> Path:
     drop_shadow(canvas, (x, top, size[0], size[1]), radius)
     canvas.alpha_composite(rounded(shot, radius), (x, top))
 
-    out = OUT / f"screenshot-{name}"
+    out = META / "phoneScreenshots" / f"{index}.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(out, optimize=True)
     return out
 
@@ -187,7 +192,8 @@ def build_feature_graphic() -> Path:
     pill = pill.convert("RGBA").resize((pill_size, pill_size), Image.LANCZOS)
     canvas.alpha_composite(pill, (pill_x, (FEATURE_H - pill_size) // 2))
 
-    out = OUT / "feature-graphic.png"
+    out = META / "featureGraphic.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(out, optimize=True)
     return out
 
@@ -214,7 +220,8 @@ def build_icon() -> Path:
     icon = Image.open(ROOT / "public/icon-512.png").convert("RGBA")
     if icon.size != (512, 512):
         icon = icon.resize((512, 512), Image.LANCZOS)
-    out = OUT / "icon-512.png"
+    out = META / "icon.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
     icon.save(out, optimize=True)
     return out
 
@@ -227,18 +234,18 @@ def main() -> int:
 
     made = [build_icon(), build_feature_graphic()]
     thumbs = build_readme_thumbs()
-    for name, caption, crop in SCREENSHOTS:
+    for i, (name, caption, crop) in enumerate(SCREENSHOTS, start=1):
         if not (RAW / name).exists():
             print(f"!! missing capture {name}", file=sys.stderr)
             return 1
-        made.append(build_screenshot(name, caption, crop))
+        made.append(build_screenshot(i, name, caption, crop))
 
     for path in made:
         w, h = Image.open(path).size
         # The 2:1 rule is a screenshot rule; the feature graphic is pinned at
         # 1024x500 by Play itself, which is wider than 2:1.
         flag = ""
-        if path.name.startswith("screenshot-") and max(w, h) > min(w, h) * 2:
+        if "phoneScreenshots" in str(path) and max(w, h) > min(w, h) * 2:
             flag = "  <-- EXCEEDS PLAY'S 2:1 SCREENSHOT LIMIT"
         print(f"{path.relative_to(ROOT)}  {w}x{h}{flag}")
     print(f"store/readme/  {len(thumbs)} thumbnails at {THUMB_W}px wide")

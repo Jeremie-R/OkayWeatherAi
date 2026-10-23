@@ -1,0 +1,26 @@
+Okay Weather answers the question you actually have: is it about to rain on me?
+
+A widget that changes when the weather does
+
+Most of the time it sits quietly on your home screen as a small pill - the temperature and the current conditions, nothing more. When rain is due within the hour it squares off and shows you when it starts, how long it lasts, and how hard. There is no setting to flip and no second widget to place; it switches on its own.
+
+It stays current without being opened. And if a reading ever does go stale, it tells you rather than quietly showing you yesterday's weather.
+
+In the app
+
+- Right now, the next eight hours, and the coming hour of rain drawn as a curve
+- Ten days ahead, and you can open any day for an hour-by-hour breakdown
+- Morning, afternoon and evening at a glance
+- Two hours of rain radar you can scrub back through
+- Sunrise, sunset, moon phase, wind and air quality
+- Official weather warnings where they are published
+
+Make it yours
+
+Three styles: Modern, Material (which takes its colours from your wallpaper) and Frosted. Three icon sets, including the original one from the first version of the app. Degrees in Celsius or Fahrenheit, wind in km/h, m/s or mph, and a 24-hour or 12-hour clock. Light, dark, or follow the system.
+
+No account, no sign-in, no ads
+
+Open it and it works.
+
+Forecasts from OpenWeatherMap and Open-Meteo. Radar from RainViewer. Base map (c) OpenStreetMap contributors, (c) CARTO.

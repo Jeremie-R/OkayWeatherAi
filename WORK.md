@@ -210,6 +210,82 @@ the app and the widget agree.
 - Follow Sundial: `keystore.properties` (gitignored) + `signingConfigs` in
   `app/build.gradle`; `./gradlew assembleRelease`.
 
+## Play Store listing (gplay)
+
+The listing lives in `metadata/` and is synced with the `gplay` CLI rather
+than typed into the console. `tools/make_store_assets.py` writes the
+Play-spec graphics straight into `metadata/en-US/images/`, so there is one
+copy of each asset, not a `store/` duplicate that can drift.
+
+```
+metadata/en-US/
+  title.txt              Okay Weather
+  short_description.txt  <= 80 chars
+  full_description.txt   <= 4000 chars
+  images/
+    icon.png             512x512, 32-bit with alpha
+    featureGraphic.png   1024x500, no alpha
+    phoneScreenshots/1..6.png   1080x1920 (exactly 9:16)
+```
+
+`store/` keeps only `raw/` (the device captures everything is built from)
+and `readme/` (small versions for the README).
+
+**Regenerating the graphics needs a Pillow built with FreeType.** The system
+Pillow on this Mac is not, so use a venv:
+
+```bash
+python3 -m venv /tmp/pil && /tmp/pil/bin/pip install Pillow
+/tmp/pil/bin/python tools/make_store_assets.py
+```
+
+**The loop.** Both validate steps are offline and need no credentials, so
+they are worth running before anything touches the network:
+
+```bash
+gplay metadata validate --dir ./metadata
+gplay metadata images validate --dir ./metadata
+gplay metadata apply --dir ./metadata --dry-run          # online diff
+gplay metadata images apply --dir ./metadata --dry-run
+gplay metadata apply --dir ./metadata --confirm          # publishes
+gplay metadata images apply --dir ./metadata --confirm
+```
+
+`apply --confirm` goes **live immediately** — there is no draft stage for
+images. Always dry-run first.
+
+### Auth
+
+gplay authenticates as a Google Cloud **service account** invited to the Play
+Console, not as a browser login. The JSON key is a credential: keep it
+outside the repo, like the upload keystore. `gplay auth login` stores it in
+the macOS Keychain. The pre-commit hook in `tools/githooks/` already blocks
+it, because a service-account JSON contains a `BEGIN PRIVATE KEY` block.
+
+```bash
+gplay auth login --service-account ~/keys/play-sa.json \
+  --developer-id 4936217173120244785
+gplay auth doctor --package com.roberrini.okayweather
+```
+
+`auth doctor` exits 10 if the key is bad and 11 if the key is valid but the
+service account has not been invited to the app — worth running first,
+because Play can take a while to propagate a new invitation.
+
+### Account facts
+
+| | |
+| --- | --- |
+| Package | `com.roberrini.okayweather` |
+| Developer account id | `4936217173120244785` |
+| App id | `4973589210705038964` |
+| Account type | Personal — so production needs a closed test first |
+
+A personal account must run a **closed test with 12+ testers opted in for 14
+continuous days** before it can apply for production. Manage the testers
+through a Google Group, not a pasted email list: members can then be changed
+without touching Play Console, and the 14 days are continuous per tester.
+
 ## Release signing
 
 The Gradle wiring is in place; the key itself is not, and deliberately so.

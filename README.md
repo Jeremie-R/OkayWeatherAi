@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="store/icon-512.png" width="92" alt="Okay Weather icon">
+<img src="metadata/en-US/images/icon.png" width="92" alt="Okay Weather icon">
 
 # Okay Weather
 
@@ -8,7 +8,7 @@
 
 [Open the web app](https://weather.app.roberrini.com/) · [Build it yourself](#run-it-yourself)
 
-<img src="store/feature-graphic.png" width="760" alt="Okay Weather">
+<img src="metadata/en-US/images/featureGraphic.png" width="760" alt="Okay Weather">
 
 </div>
 
