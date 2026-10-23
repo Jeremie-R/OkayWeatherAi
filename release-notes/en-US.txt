@@ -1,0 +1,5 @@
+First release.
+
+On your home screen: a quiet pill showing the temperature and current conditions, which reshapes into a rain card when rain is due within the hour.
+
+In the app: today hour by hour, ten days ahead, live rain radar, sun and moon times, wind and air quality. Three styles, three icon sets, and your choice of units.
