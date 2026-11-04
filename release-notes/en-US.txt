@@ -1,5 +1,5 @@
-First release.
+A calmer day view.
 
-On your home screen: a quiet pill showing the temperature and current conditions, which reshapes into a rain card when rain is due within the hour.
+The hourly timeline no longer labels every reading — it marks the start, the low, the high and the end, and shows a weather icon only where the weather actually changes.
 
-In the app: today hour by hour, ten days ahead, live rain radar, sun and moon times, wind and air quality. Three styles, three icon sets, and your choice of units.
+The two-hour block you are in is now highlighted, the charts no longer clip the first and last hours of the day, and the sun bar finally looks right in dark mode.

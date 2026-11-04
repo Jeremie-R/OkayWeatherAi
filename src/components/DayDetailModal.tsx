@@ -20,6 +20,7 @@ import type { OneCallResponse } from "@/lib/owm";
 import type { OmHourly } from "@/lib/openmeteo";
 import {
   localDayLabel,
+  localHour,
   msToKmh,
   windTier,
   windTierTitle,
@@ -42,6 +43,11 @@ import {
   type UvTier,
   type AqiTier,
 } from "@/lib/airquality";
+
+/** Hourly readings are bucketed into 2-hour blocks, so a day is 12 columns. */
+const BLOCKS = 12;
+/** Horizontal margin passed to every chart in this view, in px. */
+const CHART_MARGIN_X = 18;
 
 function modeIcon(hours: OmHourly[]): string {
   const counts = new Map<string, number>();
@@ -259,6 +265,38 @@ export function DayDetailModal({
     };
   });
 
+  // The 2-hour blocks the user is actually in, today only.
+  const currentBlock =
+    dayIndex === 0 && data ? Math.floor(localHour(data.current.dt, data.timezone_offset) / 2) : -1;
+
+  // Match the "now" card: label only the start, min, max and end, and show an
+  // icon only where the weather actually changes. A reading every two hours
+  // is noise rather than information.
+  const filled = chartData.map((d, i) => (d.temp == null ? -1 : i)).filter((i) => i >= 0);
+  const firstIdx = filled.length ? filled[0] : -1;
+  const lastIdx = filled.length ? filled[filled.length - 1] : -1;
+  let minIdx = firstIdx;
+  let maxIdx = firstIdx;
+  for (const i of filled) {
+    if (chartData[i].temp! < chartData[minIdx].temp!) minIdx = i;
+    if (chartData[i].temp! > chartData[maxIdx].temp!) maxIdx = i;
+  }
+  const labelled = new Set([firstIdx, minIdx, maxIdx, lastIdx].filter((i) => i >= 0));
+
+  let runningIcon = "";
+  const series = chartData.map((d, i) => {
+    const changed = d.icon !== "" && d.icon !== runningIcon;
+    if (d.icon) runningIcon = d.icon;
+    return {
+      ...d,
+      label: labelled.has(i) && d.temp != null ? `${d.temp}°` : "",
+      // Always keep an icon on the block the user is in, even when the weather
+      // hasn't changed — that's the one column they're most likely to read.
+      shownIcon:
+        d.icon && (changed || i === firstIdx || i === lastIdx || i === currentBlock) ? d.icon : "",
+    };
+  });
+
   const hasRain = chartData.some((d) => d.rain > 0 || d.pop >= 25);
 
   // Wind day-level tier from mean of bucketed winds
@@ -388,67 +426,79 @@ export function DayDetailModal({
         {haveHourly ? (
           <>
             <ChartCard title="Temperature">
-              <div className="h-44 -mx-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 28, right: 8, bottom: 0, left: 0 }}>
-                    <XAxis
-                      dataKey="hour"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                      interval={1}
-                    />
-                    <YAxis hide domain={["dataMin - 2", "dataMax + 2"]} />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 12,
-                        border: "1px solid var(--border)",
-                        fontSize: 12,
-                      }}
-                      formatter={(v: number) => [`${v}°`, "Temp"]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="temp"
-                      stroke="var(--chart-temp)"
-                      strokeWidth={2.5}
-                      dot={{
-                        r: 3,
-                        fill: "var(--background)",
-                        stroke: "var(--chart-temp)",
-                        strokeWidth: 2,
-                      }}
+              {/* One wrapper for the plot and the icon row so the "now" band can
+                  run through both as a single column. The row's px-3 inside this
+                  -mx-2 wrapper reproduces exactly the px-1 it had when it sat in
+                  the (16px narrower) card. */}
+              <div className="relative -mx-2">
+                <CurrentBlockBand index={currentBlock} className="top-7 bottom-0" />
+                <div className="h-44">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={series}
+                      margin={{ top: 28, right: CHART_MARGIN_X, bottom: 0, left: CHART_MARGIN_X }}
                     >
-                      <LabelList
-                        dataKey="temp"
-                        position="top"
-                        offset={8}
-                        style={{ fill: "var(--foreground)", fontSize: 10, fontWeight: 500 }}
-                        formatter={(v: number | null) => (v == null ? "" : `${v}°`)}
+                      <XAxis
+                        dataKey="hour"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                        interval={1}
                       />
-                    </Line>
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              {/* Icons row aligned roughly under columns */}
-              <div className="grid grid-cols-12 -mt-1 px-1">
-                {chartData.map((d, i) => (
-                  <div key={i} className="flex justify-center">
-                    {d.icon ? (
-                      <WeatherIcon code={d.icon} size={18} />
-                    ) : (
-                      <span className="h-[18px]" />
-                    )}
-                  </div>
-                ))}
+                      <YAxis hide domain={["dataMin - 2", "dataMax + 2"]} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: 12,
+                          border: "1px solid var(--border)",
+                          fontSize: 12,
+                        }}
+                        formatter={(v: number) => [`${v}°`, "Temp"]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="temp"
+                        stroke="var(--chart-temp)"
+                        strokeWidth={2.5}
+                        dot={{
+                          r: 3,
+                          fill: "var(--background)",
+                          stroke: "var(--chart-temp)",
+                          strokeWidth: 2,
+                        }}
+                      >
+                        <LabelList
+                          dataKey="label"
+                          position="top"
+                          offset={8}
+                          style={{ fill: "var(--foreground)", fontSize: 10, fontWeight: 500 }}
+                        />
+                      </Line>
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-12 -mt-1 px-3">
+                  {series.map((d, i) => (
+                    <div key={i} className="flex justify-center py-0.5">
+                      {d.shownIcon ? (
+                        <WeatherIcon code={d.shownIcon} size={18} />
+                      ) : (
+                        <span className="h-[18px]" />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </ChartCard>
 
             {hasRain && (
               <ChartCard title="Rain">
-                <div className="h-36 -mx-2">
+                <div className="relative h-36 -mx-2">
+                  <CurrentBlockBand index={currentBlock} className="top-4 bottom-5" />
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
+                    <BarChart
+                      data={series}
+                      margin={{ top: 16, right: CHART_MARGIN_X, bottom: 0, left: CHART_MARGIN_X }}
+                    >
                       <XAxis
                         dataKey="hour"
                         axisLine={false}
@@ -484,9 +534,13 @@ export function DayDetailModal({
             )}
 
             <ChartCard title={windTitle}>
-              <div className="h-44 -mx-2">
+              <div className="relative h-44 -mx-2">
+                <CurrentBlockBand index={currentBlock} className="top-7 bottom-5" />
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 28, right: 8, bottom: 0, left: 0 }}>
+                  <BarChart
+                    data={series}
+                    margin={{ top: 28, right: CHART_MARGIN_X, bottom: 0, left: CHART_MARGIN_X }}
+                  >
                     <XAxis
                       dataKey="hour"
                       axisLine={false}
@@ -569,6 +623,30 @@ export function DayDetailModal({
         </section>
       </div>
     </div>
+  );
+}
+
+/**
+ * Subtle band behind a chart marking the 2-hour block the user is in.
+ *
+ * Recharts' own ReferenceArea can't do this: on a band axis it measures from
+ * the start of x1's band to the start of x2's, so highlighting a single block
+ * needs x2 to be the *next* block — and the last block of the day has none, so
+ * it silently renders an empty group. The geometry is simple enough to do
+ * directly: a chart laid out with a horizontal margin of CHART_MARGIN_X splits
+ * the remaining width into BLOCKS equal bands, so band i starts at
+ * `CHART_MARGIN_X + i * bandWidth`. That matches Recharts to the pixel and has
+ * no special case at either end.
+ */
+function CurrentBlockBand({ index, className = "" }: { index: number; className?: string }) {
+  if (index < 0 || index >= BLOCKS) return null;
+  const band = `((100% - ${2 * CHART_MARGIN_X}px) / ${BLOCKS})`;
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute rounded-md bg-foreground/[0.07] ${className}`}
+      style={{ left: `calc(${CHART_MARGIN_X}px + ${band} * ${index})`, width: `calc(${band})` }}
+    />
   );
 }
 
