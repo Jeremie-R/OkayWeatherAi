@@ -6,7 +6,7 @@
 
 **Honest forecasts, and a home-screen widget that reshapes itself when rain is coming.**
 
-[Open the web app](https://weather.app.roberrini.com/) · [Build it yourself](#run-it-yourself)
+[Get it on Google Play](https://play.google.com/store/apps/details?id=com.roberrini.okayweather) · [Open the web app](https://weather.app.roberrini.com/) · [Download the APK](https://github.com/Jeremie-R/OkayWeatherAi/releases/latest) · [Build it yourself](#run-it-yourself)
 
 <img src="metadata/en-US/images/featureGraphic.png" width="760" alt="Okay Weather">
 
@@ -17,6 +17,20 @@
 Most weather apps bury the one thing you actually want to know: _is it about to
 rain on me?_ Okay Weather puts that first — on the home screen, before you open
 anything.
+
+## Get it
+
+**[Google Play](https://play.google.com/store/apps/details?id=com.roberrini.okayweather)** —
+the Android app and the home-screen widget, updating itself as new versions ship.
+
+**[The web app](https://weather.app.roberrini.com/)** — everything except the
+widget, in any browser, with nothing to install. It's a PWA, so you can add it
+to your home screen and it keeps working when the connection drops.
+
+**[The APK](https://github.com/Jeremie-R/OkayWeatherAi/releases/latest)** — the
+same app for anyone who would rather not go through Play. Note that Play re-signs
+its own copy, so the two carry different signatures: you can't update from one to
+the other without uninstalling first.
 
 ## The widget
 
@@ -132,8 +146,10 @@ WORK.md                  build notes, toolchain, and the traps worth knowing
 
 ## Status
 
-The web app is live. The Android app builds and runs; a Play Store listing is
-being prepared — `store/` holds the icon, feature graphic and screenshots for it.
+Live on [Google Play](https://play.google.com/store/apps/details?id=com.roberrini.okayweather)
+and at [weather.app.roberrini.com](https://weather.app.roberrini.com/). The Play
+listing is managed from `metadata/` with [gplay](https://gplay.sh); `store/` holds
+the sources the icon, feature graphic and screenshots are built from.
 
 ## License
 
